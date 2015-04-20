@@ -14,13 +14,13 @@ import java.util.HashMap;
 public class RolesetDict {
     static public HashMap<String, HashMap> rolesetdict = new HashMap<>();
 
-    static public HashMap get(String key) {
+    static public HashMap addAndGet(String key) {
         if (!rolesetdict.containsKey(key))
             rolesetdict.put(key, new HashMap());        
         return rolesetdict.get(key);        
     }
     
-    static public int get(String key1, int key2) {
+    static public int addAndGet(String key1, int key2) {
         if (!rolesetdict.containsKey(key1))
             rolesetdict.put(key1, new HashMap());        
         HashMap<Integer, Integer> tmp = rolesetdict.get(key1);

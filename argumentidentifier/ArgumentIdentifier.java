@@ -20,6 +20,7 @@ public class ArgumentIdentifier {
     final public Perceptron perceptron;
     final public FeatureExtracter feature_extracter;
     public float correct, p_total, r_total;
+    public long time;
     
     public ArgumentIdentifier(final int weight_length) {
         perceptron = new Perceptron(weight_length);
@@ -86,6 +87,90 @@ public class ArgumentIdentifier {
         System.out.println("\tAI Train Recall: " + r);
         System.out.println("\tAI Train F1: " + (2*p*r)/(p+r));
     }
+    
+    
+    final public void test(final ArrayList<Sentence> testsentencelist) {
+        time = (long) 0.0;
+
+        for (int i=0; i<testsentencelist.size(); ++i) {
+            final Sentence sentence = testsentencelist.get(i);
+            
+            sentence.initializeParguments();
+            
+            final int[] preds = sentence.preds;
+            final ArrayList<Token> tokens = sentence.tokens;
+
+            if (feature_extracter.g_cache.size() < i+1)
+                feature_extracter.g_cache.add(new String[sentence.preds.length][sentence.size()][]);
+
+            if (sentence.preds.length == 0) continue;
+            
+            for (int prd_i=0; prd_i<preds.length; ++prd_i) {
+                final Token pred = tokens.get(preds[prd_i]);                            
+            
+                for (int arg_id=1; arg_id<sentence.size(); ++arg_id) {            
+                    long time1 = System.currentTimeMillis();
+                    final int[] features = extractFeatures(sentence, prd_i, arg_id);
+                    final float score = perceptron.calcScore(features);
+                    final int label = sign(score);
+                    long time2 = System.currentTimeMillis();                    
+                    time += time2 - time1;
+                    
+                    if (label == 1) pred.parguments.add(arg_id);
+                }
+            }
+            
+            if (i%1000 == 0 && i != 0)
+                System.out.print(String.format("%d ", i));
+        }
+        
+    }
+
+    final public void eval(final ArrayList<Sentence> testsentencelist,
+                            final ArrayList<Sentence> evalsentencelist) {
+        time = (long) 0.0;
+        correct = 0.0f;
+        p_total = 0.0f;
+        r_total = 0.0f;
+
+        for (int i=0; i<testsentencelist.size(); ++i) {
+            final Sentence testsentence = testsentencelist.get(i);
+            final Sentence evalsentence = evalsentencelist.get(i);
+
+            final int[] preds = testsentence.preds;
+            final ArrayList<Token> tokens = testsentence.tokens;
+            final ArrayList<Token> o_tokens = evalsentence.tokens;
+
+            if (testsentence.preds.length == 0) continue;
+            
+            for (int prd_i=0; prd_i<preds.length; ++prd_i) {
+                final Token pred = tokens.get(preds[prd_i]);                            
+                final Token o_pred = o_tokens.get(preds[prd_i]);
+                
+                for (int j=0; j<pred.parguments.size(); ++j) {
+                    final int arg_id = pred.parguments.get(j);
+                    
+                    if (o_pred.arguments.contains(arg_id)) correct += 1.0;
+                    p_total += 1.0;
+                }
+                
+                r_total += o_pred.arguments.size();
+            
+            }
+            
+        }
+
+        float p = correct/p_total;
+        float r = correct/r_total;
+        System.out.println("\n\tAI Test Correct: " + correct);
+        System.out.println("\tAI Test R_Total: " + r_total);
+        System.out.println("\tAI Test P_Total: " + p_total);
+        System.out.println("\tAI Test Precision: " + p);
+        System.out.println("\tAI Test Recall: " + r);
+        System.out.println("\tAI Test F1: " + (2*p*r)/(p+r));
+        
+    }
+    
     
     final public int[] extractFeatures(final Sentence sentence, final int prd,
                                          final int arg) {

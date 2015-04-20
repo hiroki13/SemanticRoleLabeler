@@ -116,6 +116,20 @@ final public class Sentence {
         }
         
     }
+    
+    final public void initializeParguments() {
+        for (int i=1; i<this.size(); ++i) {        
+            Token arg = tokens.get(i);
+            arg.parguments = new ArrayList();
+        }
+    }
+
+    final public void initializePapred() {
+        for (int i=1; i<this.size(); ++i) {        
+            Token arg = tokens.get(i);
+            arg.papred = new int[preds.length];
+        }
+    }
 
     final void setArguments() {
         for (int i=0; i<this.preds.length; ++i) {    
@@ -132,6 +146,7 @@ final public class Sentence {
         
     }
 
+/*    
     final void setPArguments() {
         for (int i=0; i<this.preds.length; ++i) {    
             Token pred = tokens.get(preds[i]);
@@ -140,16 +155,18 @@ final public class Sentence {
             for (int j=1; j<this.size(); ++j) {
                 Token arg = tokens.get(j);
                 
-                if (arg.papred == null)
-                    arg.papred = new int[preds.length];
-
+                if (arg.papred == null) {
+                    continue;
+//                    arg.papred = new int[preds.length];
+                }
+                
                 if (arg.papred[i] > -1)
                     pred.parguments.add(arg.id);
             }
         }
         
     }
-    
+*/    
     
     final void setOracleGraph() {
         o_graph = new ArrayList[this.preds.length];

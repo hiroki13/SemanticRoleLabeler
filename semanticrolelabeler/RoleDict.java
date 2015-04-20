@@ -22,7 +22,7 @@ public class RoleDict {
         rolearray.add(roledict.indexOf(role));
     }
 
-    final static public int get(String role) {
+    final static public int addAndGet(String role) {
         if (!roledict.contains(role)) {
             roledict.add(role);
             rolearray.add(roledict.indexOf(role));

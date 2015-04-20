@@ -53,7 +53,7 @@ public class FrameDictBuilder {
 
                 lemma = split[0];
                 int tmp_roleset = Integer.parseInt(split[1]);
-                roleset = (int) RolesetDict.get(lemma, tmp_roleset);
+                roleset = (int) RolesetDict.addAndGet(lemma, tmp_roleset);
                 FrameDict.put(lemma, roleset);
             }
             else if ("role".equals(gchild.getNodeName())) {
@@ -62,10 +62,10 @@ public class FrameDictBuilder {
                 Node id2 = attributes.getNamedItem("f");
 
                 if (id1 != null) {
-                    role = RoleDict.get(id1.getNodeValue());
+                    role = RoleDict.addAndGet(id1.getNodeValue());
                 }
                 if (id2 != null) {
-                    role = RoleDict.get(id2.getNodeValue());
+                    role = RoleDict.addAndGet(id2.getNodeValue());
                 }
                 
                 FrameDict.add(lemma, roleset, role);

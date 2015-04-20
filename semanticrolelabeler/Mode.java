@@ -17,10 +17,10 @@ final public class Mode {
     
     final OptionParser optionparser;
     String modeselect, parserselect;    
-    String trainfile, testfile, outfile, modelfile, framefile;
-    boolean train, test, output, model, frame, check_accuracy;
+    String trainfile, testfile, evalfile, outfile, modelfile, framefile;
+    boolean train, test, eval, output, model, frame, check_accuracy;
     int iteration, restart, weight_length;
-    ArrayList<Sentence> trainsentence, testsentence;
+    ArrayList<Sentence> trainsentence, testsentence, evalsentence;
     HashMap framedict, rolesetdict;
     String lemma, roleset, role;
     
@@ -47,6 +47,7 @@ final public class Mode {
     final public void setParameter(){
         train = optionparser.isExsist("train");
         test = optionparser.isExsist("test");
+        eval = optionparser.isExsist("eval");
         output = optionparser.isExsist("output");
         model = optionparser.isExsist("model");
         frame = optionparser.isExsist("frame");
@@ -59,11 +60,14 @@ final public class Mode {
         setParameter();
         ParameterChecker p_checker = new ParameterChecker(this);
         p_checker.check();
+        System.out.println("\nSemantic Role Labeling START");        
         System.out.println("PARSER: " + parserselect);        
 
         if ("train".equals(modeselect)) {
-            trainsentence = Reader.read(trainfile);
+            System.out.println("\nFiles Loaded...");        
+            trainsentence = Reader.read(trainfile, false);
             testsentence = Reader.read(testfile, true);
+            evalsentence = Reader.read(evalfile);
             
             System.out.println(String.format(
                 "Train Sents: %d\nTest Sents: %d",                        
@@ -74,25 +78,21 @@ final public class Mode {
             ArrayList a = RoleDict.roledict;
             System.out.println("Roles: " + RoleDict.roledict.size());
             
-//            if ("ai".equals(parserselect)) {
+//            if ("ai".equals(parserselect)) {    
+            System.out.println("\nArgument Identifier Learning START");        
                 ArgumentIdentifier ai = new ArgumentIdentifier(weight_length);
                 for (int i=0; i<iteration; ++i) {
                     System.out.println("\nIteration: " + (i+1));
                     ai.train(trainsentence);
                     System.out.println();                
                     AccuracyChecker checker = new AccuracyChecker();
-                    checker.testAI(testsentence, ai);
+                    checker.testAI(testsentence, evalsentence, ai);
                     
-                    if (i == iteration-1)
-                        checker.identify(testsentence, ai);
                 }
 //                return;
 //            }
             
-            for (int i=0; i<testsentence.size(); ++i) {
-                testsentence.get(i).setPArguments();
-            }
-            
+            System.out.println("\nArgument Classifier Learning START");        
             final Trainer trainer;
             if ("hill".equals(parserselect))
                 trainer = new Trainer(trainsentence, weight_length, true);
@@ -107,7 +107,7 @@ final public class Mode {
                 if ("hill".equals(parserselect))
                     checker.testHill(testsentence, trainer.hillparser);
                 else
-                    checker.testBase(testsentence, trainer.baseparser);                    
+                    checker.testBase(testsentence, evalsentence, trainer.baseparser);                    
             }
         }
     }    

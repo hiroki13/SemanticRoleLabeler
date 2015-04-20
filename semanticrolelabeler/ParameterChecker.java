@@ -25,6 +25,7 @@ final public class ParameterChecker {
         if ("train".equals(modeselect)) {
             setTrainFile();
             setTestFile();
+            setEvalFile();
             setOutputFile();
             setFrameFile();
             
@@ -64,7 +65,11 @@ final public class ParameterChecker {
             System.exit(0);
         }
     }
-        
+
+    final public void setEvalFile() {
+        if(mode.eval) mode.evalfile = optionparser.getString("eval");
+    }
+    
     final public void setOutputFile() {
         if(mode.output) mode.outfile = optionparser.getString("output");
         else {

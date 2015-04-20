@@ -16,6 +16,7 @@ public class BaseParser {
     public MultiClassPerceptron perceptron;
     public FeatureExtracter feature_extracter;
     public float correct, total, r_total, p_total;
+    public long time;
     
     public BaseParser(final int label_length, final int weight_length) {
         this.perceptron = new MultiClassPerceptron(label_length, weight_length);
@@ -42,11 +43,11 @@ public class BaseParser {
                 final ArrayList<Integer> arguments = pred.arguments;
                 final String pos = feature_extracter.pos(tokens.get(preds[prd_i]));
 
-                for (int arg_i=1; arg_i<arguments.size(); ++arg_i) {
+                for (int arg_i=0; arg_i<arguments.size(); ++arg_i) {
                     final Token arg = sentence.tokens.get(arguments.get(arg_i));
                     final String[] i_feature = feature_extracter.instantiateFirstOrdFeature(sentence, prd_i, arg_i);
-                    final String[] c_feature = feature_extracter.conjoin(i_feature, pos);
-                    final int[] feature = feature_extracter.encodeFeature2(c_feature);
+//                    final String[] c_feature = feature_extracter.conjoin(i_feature, pos);
+                    final int[] feature = feature_extracter.encodeFeature2(i_feature);
                     final int label = decode(pred, feature);
                     final int o_label = arg.apred[prd_i];
             
@@ -67,8 +68,114 @@ public class BaseParser {
         
     }
     
+    final public void test(final ArrayList<Sentence> testsentencelist) {
+        time = (long) 0.0;
+        
+        for (int i=0; i<testsentencelist.size(); i++){
+            Sentence testsentence = testsentencelist.get(i);
+            testsentence.initializePapred();
+            
+            final ArrayList<Token> tokens = testsentence.tokens;
+            final int[] preds = testsentence.preds;
+            
+            if (feature_extracter.g_cache.size() < i+1)
+                feature_extracter.g_cache.add(new String[testsentence.preds.length][testsentence.size()][]);
+            
+            if (testsentence.preds.length == 0) continue;
+
+            for (int prd_i=0; prd_i<preds.length; ++prd_i) {
+                final Token pred = testsentence.tokens.get(preds[prd_i]);
+                ArrayList<Integer> arguments = pred.parguments;
+                
+                final String pos = feature_extracter.pos(tokens.get(preds[prd_i]));
+
+                for (int arg_i=0; arg_i<arguments.size(); ++arg_i) {
+                    final Token arg = testsentence.tokens.get(arguments.get(arg_i));
+
+                    long time1 = System.currentTimeMillis();
+                    final String[] i_feature = feature_extracter.instantiatePredFirstOrdFeature(testsentence, prd_i, arg_i);
+//                    final String[] c_feature = feature_extracter.conjoin(i_feature, pos);
+                    final int[] feature = feature_extracter.encodeFeature2(i_feature);
+                    final int label = decode(pred, feature);
+                    arg.papred[prd_i] = label;
+                    long time2 = System.currentTimeMillis();                    
+                    time += time2 - time1;
+                }
+                
+            }
+            
+            if (i%100 == 0 && i != 0)
+                System.out.print(String.format("%d ", i));            
+        }
+
+    }    
+
+    
+    final public void eval(final ArrayList<Sentence> testsentencelist,
+                            final ArrayList<Sentence> evalsentencelist) {
+        correct = 0.0f;
+        p_total = 0.0f;
+        r_total = 0.0f;
+
+        for (int i=0; i<evalsentencelist.size(); i++){
+            final Sentence evalsentence = evalsentencelist.get(i);
+            final Sentence testsentence = testsentencelist.get(i);
+            final int[] preds = evalsentence.preds;
+            
+            if (evalsentence.preds.length == 0) continue;
+
+            for (int prd_i=0; prd_i<preds.length; ++prd_i) {
+                final Token o_pred = evalsentence.tokens.get(preds[prd_i]);
+                final ArrayList<Integer> arguments = o_pred.arguments;
+                r_total += arguments.size();
+
+                for (int arg_i=0; arg_i<arguments.size(); ++arg_i) {
+                    final Token o_arg = evalsentence.tokens.get(arguments.get(arg_i));
+                    final Token arg = getArg(testsentence, prd_i, o_arg);
+                    final int o_label = o_arg.apred[prd_i];
+                    final int label;
+                    
+                    if (arg != null) {
+                        label = arg.papred[prd_i];
+                    }
+                    else label = -1;
+                    
+                    if (label > -1 && o_label == label)
+                        correct += 1.0;
+                }
+
+                final Token pred = testsentence.tokens.get(preds[prd_i]);
+                p_total += pred.parguments.size();                
+                
+            }
+        }
+
+        float p = correct/p_total;
+        float r = correct/r_total;
+        System.out.println("\n\tTest Correct: " + correct);
+        System.out.println("\tTest R_Total: " + r_total);
+        System.out.println("\tTest P_Total: " + p_total);
+        System.out.println("\tTest Precision: " + p);
+        System.out.println("\tTest Recall: " + r);
+        System.out.println("\tTest F1: " + (2*p*r)/(p+r));
+        System.out.println("\tTest Speed: " + time);                
+        
+    }
+    
+    final private Token getArg(final Sentence testsentence, final int prd_i, final Token o_arg) {
+        final ArrayList<Integer> arguments = testsentence.tokens.get(testsentence.preds[prd_i]).parguments;
+        for (int i=0; i<arguments.size(); ++i) {
+            final Token arg = testsentence.tokens.get(arguments.get(i));
+            
+            if (arg.id == o_arg.id) return arg;
+        }
+        
+        return null;
+    }
+
+    
     final public int decode(final Token pred, final int[] feature) {
-        final int roleset = pred.pred;        
+//        final int roleset = pred.pred;        
 //        final ArrayList<Integer> possible_roles = FrameDict.get(pred.plemma, roleset);
         final ArrayList<Integer> possible_roles = RoleDict.rolearray;
         int best_role = -1;

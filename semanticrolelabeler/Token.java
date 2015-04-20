@@ -7,7 +7,6 @@
 package semanticrolelabeler;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 /**
  *
@@ -34,10 +33,10 @@ final public class Token {
     public String subcat;
     public String childdepset;
     public String childposset;
-    public ArrayList<String> leftsiblingw;
-    public ArrayList<String> rightsiblingw;
-    public ArrayList<String> leftsiblingpos;
-    public ArrayList<String> rightsiblingpos;
+    final public ArrayList<String> leftsiblingw;
+    final public ArrayList<String> rightsiblingw;
+    final public ArrayList<String> leftsiblingpos;
+    final public ArrayList<String> rightsiblingpos;
     public int ppred = 0;
     public int pred_id = -1;
     public int[] papred;
@@ -45,7 +44,7 @@ final public class Token {
     public ArrayList<Integer> arguments;
     public ArrayList<Integer> parguments;
     
-    public Token(String[] line) {
+    public Token(final String[] line, final boolean test) {
         id = Integer.parseInt(line[0]);
         form = line[1];
         lemma = line[2];
@@ -59,15 +58,8 @@ final public class Token {
         deprel = line[10];
         pdeprel = line[11];
         fillpred = line[12];
-        pred = getRolesetID2(line[13]);
-        apred = new int[line.length-14];
-        
-        for (int i=0; i<apred.length; ++i) {
-            if (!"_".equals(line[14+i]))
-                apred[i] = RoleDict.get(line[14+i]);
-            else
-                apred[i] = -1;
-        }
+        pred = getRolesetID(plemma, line[13]);
+        apred = setApred(line, test);
         
         children = new ArrayList<>();
         subcat = "";
@@ -80,7 +72,8 @@ final public class Token {
         arguments = new ArrayList<>();
         parguments = new ArrayList<>();
     }
-    
+
+/*    
     final private int getRolesetID(String line) {
         if (!"_".equals(line)) {
             final String[] tmp = line.split("\\.");
@@ -111,12 +104,32 @@ final public class Token {
         else
             return -1;        
     }
+*/    
+
+    final private int[] setApred(final String[] line, final boolean test) {
+        final int[] apred = new int[line.length-14];
+        
+        if (!test) {
+            for (int i=0; i<apred.length; ++i) {
+                if (!"_".equals(line[14+i]))
+                    apred[i] = RoleDict.addAndGet(line[14+i]);
+                else
+                    apred[i] = -1;
+            }
+        }
+        else {
+            for (int i=0; i<apred.length; ++i)
+                apred[i] = -1;            
+        }
+        
+        return apred;
+    }
     
-    final private int getRolesetID2(String line) {
+    final public static int getRolesetID(final String plemma, final String line) {
         if (!"_".equals(line)) {
             final String[] tmp = line.split("\\.");
             int tmp_roleset = Integer.parseInt(tmp[1]);
-            return RolesetDict.get(plemma, tmp_roleset);
+            return RolesetDict.addAndGet(plemma, tmp_roleset);
         }
         else return -1;
     }
