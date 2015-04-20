@@ -8,6 +8,7 @@ package semanticrolelabeler;
 import argumentidentifier.ArgumentIdentifier;
 import java.util.ArrayList;
 import java.util.HashMap;
+import predicatedisambiguator.PredicateDisambiguator;
 
 /**
  *
@@ -18,7 +19,7 @@ final public class Mode {
     final OptionParser optionparser;
     String modeselect, parserselect;    
     String trainfile, testfile, evalfile, outfile, modelfile, framefile;
-    boolean train, test, eval, output, model, frame, check_accuracy;
+    boolean train, test, eval, output, model, frame, check_accuracy, pd, ai, ac;
     int iteration, restart, weight_length;
     ArrayList<Sentence> trainsentence, testsentence, evalsentence;
     HashMap framedict, rolesetdict;
@@ -45,6 +46,9 @@ final public class Mode {
     }
 
     final public void setParameter(){
+        pd = optionparser.isExsist("pd");
+        ai = optionparser.isExsist("ai");
+        ac = optionparser.isExsist("ac");
         train = optionparser.isExsist("train");
         test = optionparser.isExsist("test");
         eval = optionparser.isExsist("eval");
@@ -77,20 +81,33 @@ final public class Mode {
             System.out.println("Framedict: " + framedict.size());
             ArrayList a = RoleDict.roledict;
             System.out.println("Roles: " + RoleDict.roledict.size());
+
+            if (pd) {
+                System.out.println("\nPredicate Disambiguator Learning START");        
+                PredicateDisambiguator pd = new PredicateDisambiguator(weight_length);
+                for (int i=0; i<iteration; ++i) {
+                    System.out.println("\nIteration: " + (i+1));
+                    pd.train(trainsentence);
+                    System.out.println();                
+                    AccuracyChecker checker = new AccuracyChecker();
+                    checker.testPD(testsentence, evalsentence, pd);                    
+                }
+                weight_length = weight_length * 100;
+            }
             
-//            if ("ai".equals(parserselect)) {    
-            System.out.println("\nArgument Identifier Learning START");        
+            if (ai) {    
+                System.out.println("\nArgument Identifier Learning START");        
                 ArgumentIdentifier ai = new ArgumentIdentifier(weight_length);
                 for (int i=0; i<iteration; ++i) {
                     System.out.println("\nIteration: " + (i+1));
                     ai.train(trainsentence);
                     System.out.println();                
                     AccuracyChecker checker = new AccuracyChecker();
-                    checker.testAI(testsentence, evalsentence, ai);
-                    
+                    checker.testAI(testsentence, evalsentence, ai);                    
                 }
-//                return;
-//            }
+            }
+            
+            if (!ac) return;
             
             System.out.println("\nArgument Classifier Learning START");        
             final Trainer trainer;
@@ -105,7 +122,7 @@ final public class Mode {
                 System.out.println();
                 AccuracyChecker checker = new AccuracyChecker();
                 if ("hill".equals(parserselect))
-                    checker.testHill(testsentence, trainer.hillparser);
+                    checker.testHill(testsentence, evalsentence, trainer.hillparser);
                 else
                     checker.testBase(testsentence, evalsentence, trainer.baseparser);                    
             }

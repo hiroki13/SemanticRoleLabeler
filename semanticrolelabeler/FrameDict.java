@@ -13,48 +13,73 @@ import java.util.HashMap;
  * @author hiroki
  */
 public class FrameDict {
-    static public HashMap<String, HashMap> framedict = new HashMap<>();
+    static public HashMap<String, HashMap<Integer, ArrayList>> framedict = new HashMap<>();
     
-    static public HashMap get(String key) {
-        if (!framedict.containsKey(key))
-            framedict.put(key, new HashMap());        
-        return framedict.get(key);        
+    static public HashMap get(final String lemma) {
+        return framedict.get(lemma);
     }
 
-    static public ArrayList<Integer> get(String key1, int key2) {
-        if (!framedict.containsKey(key1))
-            framedict.put(key1, new HashMap());        
-        HashMap<Integer, ArrayList> tmp = framedict.get(key1);
-
-        if (!tmp.containsKey(key2))
-            tmp.put(key2, new ArrayList());
-        return tmp.get(key2);
+    static public ArrayList get(final String lemma, final int sense) {
+        HashMap<Integer, ArrayList> tmp = framedict.get(lemma);
+        
+        if (tmp == null) return null;
+        
+        return tmp.get(sense);
+    }
+    
+    static public boolean containsKey(final String lemma) {
+        return framedict.containsKey(lemma);
     }
 
-    static public void put(String key, HashMap value) {
-        framedict.put(key, value);    
+    static public HashMap addAndGet(final String lemma) {        
+        if (!framedict.containsKey(lemma))
+            framedict.put(lemma, new HashMap());        
+        return framedict.get(lemma);        
+    }
+
+    static public ArrayList<Integer> addAndGet(final String lemma, final int sense) {
+        if (!framedict.containsKey(lemma))
+            framedict.put(lemma, new HashMap());        
+        HashMap<Integer, ArrayList> tmp = framedict.get(lemma);
+
+        if (!tmp.containsKey(sense))
+            tmp.put(sense, new ArrayList());
+        return tmp.get(sense);
+    }
+
+    static public void put(final String lemma, final HashMap value) {
+        framedict.put(lemma, value);    
     }    
 
-    static public void put(String lemma, int roleset) {
+    static public void put(String lemma, int sense) {
         if (!framedict.containsKey(lemma))
             framedict.put(lemma, new HashMap());
-        framedict.get(lemma).put(roleset, new ArrayList());
+        framedict.get(lemma).put(sense, new ArrayList());
     }    
     
     
-    static public void add(String key1, int key2, int key3) {
-        if (key3 < 0) return;
+    static public void add(String lemma, int sense, int role) {
+        if (role < 0) return;
         
-        if (!framedict.containsKey(key1))
-            framedict.put(key1, new HashMap());        
-        final HashMap<Integer, ArrayList> rolesets = framedict.get(key1);
+        if (!framedict.containsKey(lemma))
+            framedict.put(lemma, new HashMap());        
+        final HashMap<Integer, ArrayList> frames = framedict.get(lemma);
 
-        if (!rolesets.containsKey(key2))
-            rolesets.put(key2, new ArrayList());
-        final ArrayList proposition = rolesets.get(key2);
+        if (!frames.containsKey(sense))
+            frames.put(sense, new ArrayList());
+        final ArrayList proposition = frames.get(sense);
         
-        if (!proposition.contains(key3))
-            proposition.add(key3);
+        if (!proposition.contains(role))
+            proposition.add(role);
     }
 
+    static public void add(String lemma, int sense) {
+        if (!framedict.containsKey(lemma))
+            framedict.put(lemma, new HashMap());        
+        final HashMap<Integer, ArrayList> frames = framedict.get(lemma);
+
+        if (!frames.containsKey(sense))
+            frames.put(sense, new ArrayList());
+    }
+    
 }

@@ -6,7 +6,6 @@
 package semanticrolelabeler;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 /**
  *
@@ -30,7 +29,6 @@ public class BaseParser {
 
         for (int i=0; i<sentencelist.size(); ++i) {
             final Sentence sentence = sentencelist.get(i);
-            final ArrayList<Token> tokens = sentence.tokens;
             final int[] preds = sentence.preds;
                         
             if (feature_extracter.g_cache.size() < i+1)
@@ -41,14 +39,12 @@ public class BaseParser {
             for (int prd_i=0; prd_i<preds.length; ++prd_i) {
                 final Token pred = sentence.tokens.get(preds[prd_i]);
                 final ArrayList<Integer> arguments = pred.arguments;
-                final String pos = feature_extracter.pos(tokens.get(preds[prd_i]));
 
                 for (int arg_i=0; arg_i<arguments.size(); ++arg_i) {
                     final Token arg = sentence.tokens.get(arguments.get(arg_i));
                     final String[] i_feature = feature_extracter.instantiateFirstOrdFeature(sentence, prd_i, arg_i);
-//                    final String[] c_feature = feature_extracter.conjoin(i_feature, pos);
                     final int[] feature = feature_extracter.encodeFeature2(i_feature);
-                    final int label = decode(pred, feature);
+                    final int label = decode(pred, feature, false);
                     final int o_label = arg.apred[prd_i];
             
                     perceptron.updateWeights(o_label, label, feature);
@@ -75,7 +71,6 @@ public class BaseParser {
             Sentence testsentence = testsentencelist.get(i);
             testsentence.initializePapred();
             
-            final ArrayList<Token> tokens = testsentence.tokens;
             final int[] preds = testsentence.preds;
             
             if (feature_extracter.g_cache.size() < i+1)
@@ -85,19 +80,16 @@ public class BaseParser {
 
             for (int prd_i=0; prd_i<preds.length; ++prd_i) {
                 final Token pred = testsentence.tokens.get(preds[prd_i]);
-                ArrayList<Integer> arguments = pred.parguments;
+                ArrayList<Integer> arguments = pred.arguments;
                 
-                final String pos = feature_extracter.pos(tokens.get(preds[prd_i]));
-
                 for (int arg_i=0; arg_i<arguments.size(); ++arg_i) {
                     final Token arg = testsentence.tokens.get(arguments.get(arg_i));
 
                     long time1 = System.currentTimeMillis();
                     final String[] i_feature = feature_extracter.instantiatePredFirstOrdFeature(testsentence, prd_i, arg_i);
-//                    final String[] c_feature = feature_extracter.conjoin(i_feature, pos);
                     final int[] feature = feature_extracter.encodeFeature2(i_feature);
-                    final int label = decode(pred, feature);
-                    arg.papred[prd_i] = label;
+                    final int label = decode(pred, feature, true);
+                    arg.apred[prd_i] = label;
                     long time2 = System.currentTimeMillis();                    
                     time += time2 - time1;
                 }
@@ -136,7 +128,7 @@ public class BaseParser {
                     final int label;
                     
                     if (arg != null) {
-                        label = arg.papred[prd_i];
+                        label = arg.apred[prd_i];
                     }
                     else label = -1;
                     
@@ -145,7 +137,7 @@ public class BaseParser {
                 }
 
                 final Token pred = testsentence.tokens.get(preds[prd_i]);
-                p_total += pred.parguments.size();                
+                p_total += pred.arguments.size();                
                 
             }
         }
@@ -163,7 +155,7 @@ public class BaseParser {
     }
     
     final private Token getArg(final Sentence testsentence, final int prd_i, final Token o_arg) {
-        final ArrayList<Integer> arguments = testsentence.tokens.get(testsentence.preds[prd_i]).parguments;
+        final ArrayList<Integer> arguments = testsentence.tokens.get(testsentence.preds[prd_i]).arguments;
         for (int i=0; i<arguments.size(); ++i) {
             final Token arg = testsentence.tokens.get(arguments.get(i));
             
@@ -174,9 +166,12 @@ public class BaseParser {
     }
 
     
-    final public int decode(final Token pred, final int[] feature) {
-//        final int roleset = pred.pred;        
-//        final ArrayList<Integer> possible_roles = FrameDict.get(pred.plemma, roleset);
+    final public int decode(final Token pred, final int[] feature, final boolean test) {
+//        final ArrayList<Integer> possible_roles;
+//        if (!test)
+//            possible_roles = FrameDict.get(pred.cpos, pred.pred);
+//        else
+//            possible_roles = FrameDict.get(pred.cpos, pred.ppred);
         final ArrayList<Integer> possible_roles = RoleDict.rolearray;
         int best_role = -1;
         float best_score = -1000000.0f;
@@ -199,12 +194,7 @@ public class BaseParser {
                                                 final int arg) {
         return feature_extracter.extractFirstOrdFeature(sentence, prd, arg);
     }
-    
-    final private int[] extractSecondOrdFeature(final Sentence sentence,
-                                                   final HashMap<String, Integer>[] graph){
-        return feature_extracter.extractSecondOrdFeature(sentence, graph);
-    }
-        
+            
     final private float calcScore(final int[] feature, final int role){
         return perceptron.calcScore(feature, role);
     }

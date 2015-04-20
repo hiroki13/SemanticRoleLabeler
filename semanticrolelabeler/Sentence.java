@@ -19,6 +19,7 @@ final public class Sentence {
     final public ArrayList<Token> tokens;
     public int[] preds;
     public ArrayList<Integer>[] o_graph;
+    public ArrayList<Integer>[] p_graph;
 
     String[][] dep_path;
     String[][] dep_pos_path;
@@ -37,7 +38,6 @@ final public class Sentence {
             Token t = tokens.get(i);
             if ("Y".equals(t.fillpred)) {
                 tmp_preds.add(t.id);
-                t.pred_id = k++;
             }                
         }
         
@@ -120,17 +120,25 @@ final public class Sentence {
     final public void initializeParguments() {
         for (int i=1; i<this.size(); ++i) {        
             Token arg = tokens.get(i);
-            arg.parguments = new ArrayList();
+            arg.arguments = new ArrayList();
         }
     }
 
     final public void initializePapred() {
         for (int i=1; i<this.size(); ++i) {        
             Token arg = tokens.get(i);
-            arg.papred = new int[preds.length];
+            arg.apred = new int[preds.length];
         }
     }
 
+    final public void initializePpred() {
+        for (int i=0; i<preds.length; ++i) {        
+            Token pred = tokens.get(preds[i]);
+            pred.pred = 0;
+        }
+    }
+    
+    
     final void setArguments() {
         for (int i=0; i<this.preds.length; ++i) {    
             Token pred = tokens.get(preds[i]);
@@ -189,14 +197,16 @@ final public class Sentence {
     final void setFrameDict() {
         for (int i=0; i<this.preds.length; ++i) {
             final Token pred = this.tokens.get(this.preds[i]);
-            final int roleset = pred.pred;
+            final int sense = pred.pred;
             
             for (int j=1; j<this.size(); ++j) {
                 final Token arg = this.tokens.get(j);
                 final int role = arg.apred[i];
                         
                 if (role > -1)
-                    FrameDict.add(pred.plemma, roleset, role);
+                    FrameDict.add(pred.cpos, sense, role);
+                else
+                    FrameDict.add(pred.cpos, sense);
             }
         }
     }

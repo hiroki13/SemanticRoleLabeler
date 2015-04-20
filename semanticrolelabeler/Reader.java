@@ -78,6 +78,7 @@ final public class Reader {
                     sentence.setPredicates();
                     sentence.setArguments();
                     sentence.setFrameDict();
+                    sentence.setOracleGraph();
                     
                     sentenceList.add(sentence);
                     sentence = new Sentence(i++);

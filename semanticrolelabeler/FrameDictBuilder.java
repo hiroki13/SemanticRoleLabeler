@@ -53,7 +53,7 @@ public class FrameDictBuilder {
 
                 lemma = split[0];
                 int tmp_roleset = Integer.parseInt(split[1]);
-                roleset = (int) RolesetDict.addAndGet(lemma, tmp_roleset);
+                roleset = (int) SenseDict.addAndGet(lemma, tmp_roleset);
                 FrameDict.put(lemma, roleset);
             }
             else if ("role".equals(gchild.getNodeName())) {

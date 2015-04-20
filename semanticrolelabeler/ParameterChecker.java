@@ -30,7 +30,7 @@ final public class ParameterChecker {
             setFrameFile();
             
             if (!isParser(parserselect)) {
-                System.out.println("Enter -parser ai/base/hill");
+                System.out.println("Enter -parser base/hill");
                 System.exit(0);
             }
         }
@@ -41,7 +41,7 @@ final public class ParameterChecker {
             setOutputFile();
             
             if (!isParser(parserselect)) {
-                System.out.println("Enter -parser ai/base/hill");
+                System.out.println("Enter -parser base/hill");
                 System.exit(0);
             }
         }
@@ -95,7 +95,7 @@ final public class ParameterChecker {
     }    
     
     final public boolean isParser(String parserselect) {
-        String[] possible_parser = {"ai", "base","hill"};
+        String[] possible_parser = {"base","hill"};
         
         for (int i=0; i<possible_parser.length; i++) {
             if (parserselect.equals(possible_parser[i])) return true;

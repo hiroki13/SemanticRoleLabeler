@@ -7,6 +7,8 @@ package semanticrolelabeler;
 
 import argumentidentifier.ArgumentIdentifier;
 import java.util.ArrayList;
+import java.util.HashMap;
+import predicatedisambiguator.PredicateDisambiguator;
 
 /**
  *
@@ -20,38 +22,13 @@ final public class AccuracyChecker {
     public AccuracyChecker(){
     }
     
-    final public void testHill(final ArrayList<Sentence> sentencelist,
+    final public void testHill(final ArrayList<Sentence> testsentencelist,
+                                final ArrayList<Sentence> evalsentencelist,
                                 final HillClimbParser p){
-        time = (long) 0.0;
-        
         h_parser = new HillClimbParser(p.perceptron.weight[0].length);
         h_parser.perceptron.weight = averagingWeights(p.perceptron);
-        
-        for (int i=0; i<sentencelist.size(); i++){
-            Sentence sentence = sentencelist.get(i);
-            
-            if (h_parser.feature_extracter.g_cache.size() < i+1)
-                h_parser.feature_extracter.g_cache.add(new String[sentence.preds.length][sentence.size()][]);
-            
-            if (sentence.preds.length == 0) continue;
-            if (h_parser.checkArguments(sentence)) continue;
-
-            long time1 = System.currentTimeMillis();
-            final int[][][] features = h_parser.createFeatures(sentence);            
-            ArrayList<Integer>[] best_graph = h_parser.decode(sentence, features, 1);
-            long time2 = System.currentTimeMillis();
-
-            time += time2 - time1;
-            h_parser.checkAccuracy(sentence.o_graph, best_graph);
-            
-            if (i%100 == 0 && i != 0)
-                System.out.print(String.format("%d ", i));            
-        }
-        
-        System.out.println("\n\tTest Correct: " + h_parser.correct);                        
-        System.out.println("\tTest Total: " + h_parser.total);                        
-        System.out.println("\tTest Accuracy: " + h_parser.correct/h_parser.total);
-        System.out.println("\tTest Speed: " + time);        
+        h_parser.test(testsentencelist);
+        h_parser.eval(testsentencelist, evalsentencelist);                
     }
 
     
@@ -69,13 +46,21 @@ final public class AccuracyChecker {
     
     final public void testAI(final ArrayList<Sentence> testsentencelist,
                               final ArrayList<Sentence> evalsentencelist,
-                              final ArgumentIdentifier ai){
-        ArgumentIdentifier identifier = new ArgumentIdentifier(ai.perceptron.weight.length);
-        identifier.perceptron.weight = averagingWeights(ai.perceptron);
-        identifier.test(testsentencelist);
-        identifier.eval(testsentencelist, evalsentencelist);
+                              final ArgumentIdentifier tmp_ai){
+        ArgumentIdentifier ai = new ArgumentIdentifier(tmp_ai.perceptron.weight.length);
+        ai.perceptron.weight = averagingWeights(tmp_ai.perceptron);
+        ai.test(testsentencelist);
+        ai.eval(testsentencelist, evalsentencelist);
     }
     
+    final public void testPD(final ArrayList<Sentence> testsentencelist,
+                              final ArrayList<Sentence> evalsentencelist,
+                              final PredicateDisambiguator tmp_pd){
+        PredicateDisambiguator pd = new PredicateDisambiguator(tmp_pd.weight_length);
+        pd.perceptrons = getAvePerceptrons(tmp_pd);
+        pd.test(testsentencelist);
+        pd.eval(testsentencelist, evalsentencelist);
+    }
     
     
 /*    final public void outputPerceptron(final String fn){
@@ -97,10 +82,24 @@ final public class AccuracyChecker {
     }
 */    
 
+    
+    final private HashMap<String, MultiClassPerceptron> getAvePerceptrons(final PredicateDisambiguator pd) {
+        final HashMap<String, MultiClassPerceptron> new_ps = new HashMap();
+        
+        for (String lemma:pd.perceptrons.keySet()) {
+            final MultiClassPerceptron p = pd.perceptrons.get(lemma);
+            final MultiClassPerceptron tmp_new_p = new MultiClassPerceptron(p.weight.length, p.weight[0].length);
+            tmp_new_p.weight = averagingWeights(p);
+            new_ps.put(lemma, tmp_new_p);
+        }
+        
+        return new_ps;
+    }
+    
     final private float[][] averagingWeights(final MultiClassPerceptron p){
         final float[][] new_weight = new float[p.weight.length][p.weight[0].length];
         
-        for (int i = 0;i<p.weight.length;i++) {
+        for (int i = 0; i<p.weight.length; i++) {
             final float[] tmp_new_weight = new_weight[i];
             final float[] tmp_weight = p.weight[i];
             final float[] tmp_aweight = p.aweight[i];

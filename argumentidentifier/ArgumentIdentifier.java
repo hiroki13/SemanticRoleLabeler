@@ -106,17 +106,17 @@ public class ArgumentIdentifier {
             if (sentence.preds.length == 0) continue;
             
             for (int prd_i=0; prd_i<preds.length; ++prd_i) {
-                final Token pred = tokens.get(preds[prd_i]);                            
+                final Token pred = tokens.get(preds[prd_i]);
             
                 for (int arg_id=1; arg_id<sentence.size(); ++arg_id) {            
                     long time1 = System.currentTimeMillis();
-                    final int[] features = extractFeatures(sentence, prd_i, arg_id);
+                    final int[] features = feature_extracter.extractPredAIFeature(sentence, prd_i, arg_id);
                     final float score = perceptron.calcScore(features);
                     final int label = sign(score);
                     long time2 = System.currentTimeMillis();                    
                     time += time2 - time1;
                     
-                    if (label == 1) pred.parguments.add(arg_id);
+                    if (label == 1) pred.arguments.add(arg_id);
                 }
             }
             
@@ -147,8 +147,8 @@ public class ArgumentIdentifier {
                 final Token pred = tokens.get(preds[prd_i]);                            
                 final Token o_pred = o_tokens.get(preds[prd_i]);
                 
-                for (int j=0; j<pred.parguments.size(); ++j) {
-                    final int arg_id = pred.parguments.get(j);
+                for (int j=0; j<pred.arguments.size(); ++j) {
+                    final int arg_id = pred.arguments.get(j);
                     
                     if (o_pred.arguments.contains(arg_id)) correct += 1.0;
                     p_total += 1.0;

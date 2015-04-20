@@ -26,8 +26,9 @@ final public class Token {
     final public String deprel;
     final public String pdeprel;
     final public String fillpred;
-    final public int pred;
-    final public int[] apred;
+    public int pred;
+    public int[] apred;
+    final public String cpos;
     
     final public ArrayList<Integer> children;
     public String subcat;
@@ -37,12 +38,11 @@ final public class Token {
     final public ArrayList<String> rightsiblingw;
     final public ArrayList<String> leftsiblingpos;
     final public ArrayList<String> rightsiblingpos;
-    public int ppred = 0;
-    public int pred_id = -1;
-    public int[] papred;
+//    public int ppred = 0;
+//    public int[] papred;
     
     public ArrayList<Integer> arguments;
-    public ArrayList<Integer> parguments;
+//    public ArrayList<Integer> parguments;
     
     public Token(final String[] line, final boolean test) {
         id = Integer.parseInt(line[0]);
@@ -51,6 +51,7 @@ final public class Token {
         plemma = line[3];
         pos = line[4];
         ppos = line[5];
+        cpos = setCpos();
         feat = line[6];
         pfeat = line[7];
         head = Integer.parseInt(line[8]);
@@ -58,7 +59,7 @@ final public class Token {
         deprel = line[10];
         pdeprel = line[11];
         fillpred = line[12];
-        pred = getRolesetID(plemma, line[13]);
+        pred = getSenseID(cpos, line[13]);
         apred = setApred(line, test);
         
         children = new ArrayList<>();
@@ -70,7 +71,7 @@ final public class Token {
         leftsiblingpos = new ArrayList<>();
         rightsiblingpos = new ArrayList<>();
         arguments = new ArrayList<>();
-        parguments = new ArrayList<>();
+//        parguments = new ArrayList<>();
     }
 
 /*    
@@ -125,13 +126,18 @@ final public class Token {
         return apred;
     }
     
-    final public static int getRolesetID(final String plemma, final String line) {
+    final public static int getSenseID(final String plemma, final String line) {
         if (!"_".equals(line)) {
             final String[] tmp = line.split("\\.");
-            int tmp_roleset = Integer.parseInt(tmp[1]);
-            return RolesetDict.addAndGet(plemma, tmp_roleset);
+            int raw_sense = Integer.parseInt(tmp[1]);
+            return SenseDict.addAndGet(plemma, raw_sense);
         }
         else return -1;
     }
+    
+    final public String setCpos() {
+        if (ppos.startsWith("V")) return plemma + "V";
+        return plemma + "N";
+    }    
         
 }
