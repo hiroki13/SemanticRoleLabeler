@@ -42,8 +42,7 @@ public class BaseParser {
 
                 for (int arg_i=0; arg_i<arguments.size(); ++arg_i) {
                     final Token arg = sentence.tokens.get(arguments.get(arg_i));
-                    final String[] i_feature = feature_extracter.instantiateFirstOrdFeature(sentence, prd_i, arg_i);
-                    final int[] feature = feature_extracter.encodeFeature2(i_feature);
+                    final int[] feature = feature_extracter.extractFirstOrdFeature(sentence, prd_i, arg_i);
                     final int label = decode(pred, feature, false);
                     final int o_label = arg.apred[prd_i];
             
@@ -86,8 +85,7 @@ public class BaseParser {
                     final Token arg = testsentence.tokens.get(arguments.get(arg_i));
 
                     long time1 = System.currentTimeMillis();
-                    final String[] i_feature = feature_extracter.instantiatePredFirstOrdFeature(testsentence, prd_i, arg_i);
-                    final int[] feature = feature_extracter.encodeFeature2(i_feature);
+                    final int[] feature = feature_extracter.extractFirstOrdFeature(testsentence, prd_i, arg_i);
                     final int label = decode(pred, feature, true);
                     arg.apred[prd_i] = label;
                     long time2 = System.currentTimeMillis();                    

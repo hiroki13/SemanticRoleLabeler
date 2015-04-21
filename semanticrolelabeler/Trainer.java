@@ -20,9 +20,9 @@ final public class Trainer {
     
     public Trainer(final ArrayList<Sentence> sentencelist,
                     final int weight_length,
-                    final boolean t) {
+                    final int restart) {
         this.sentencelist = sentencelist;
-        this.hillparser = new HillClimbParser(weight_length);
+        this.hillparser = new HillClimbParser(weight_length, restart);
     }
 
     public Trainer(final ArrayList<Sentence> sentencelist,
@@ -35,7 +35,8 @@ final public class Trainer {
         if (baseparser != null)
             baseparser.train(sentencelist);
         else
-            hillparser.train(sentencelist);
+            hillparser.trainSecond(sentencelist);
+//            hillparser.train(sentencelist);
     }
 
 }

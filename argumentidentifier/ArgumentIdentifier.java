@@ -46,9 +46,9 @@ public class ArgumentIdentifier {
             
             for (int prd_i=0; prd_i<preds.length; ++prd_i) {
             
-                for (int arg=1; arg<sentence.size(); ++arg) {            
-                    final Token token = tokens.get(arg);                            
-                    final int[] features = extractFeatures(sentence, prd_i, arg);
+                for (int arg_id=1; arg_id<sentence.size(); ++arg_id) {            
+                    final Token token = tokens.get(arg_id);                            
+                    final int[] features = extractFeatures(sentence, prd_i, arg_id);
                     final float score = perceptron.calcScore(features);
                     final int label = sign(score);
                     final int o_label = sign((float) token.apred[prd_i]);
@@ -110,7 +110,7 @@ public class ArgumentIdentifier {
             
                 for (int arg_id=1; arg_id<sentence.size(); ++arg_id) {            
                     long time1 = System.currentTimeMillis();
-                    final int[] features = feature_extracter.extractPredAIFeature(sentence, prd_i, arg_id);
+                    final int[] features = feature_extracter.extractAIFeature(sentence, prd_i, arg_id);
                     final float score = perceptron.calcScore(features);
                     final int label = sign(score);
                     long time2 = System.currentTimeMillis();                    

@@ -72,10 +72,10 @@ final public class ParameterChecker {
     
     final public void setOutputFile() {
         if(mode.output) mode.outfile = optionparser.getString("output");
-        else {
-            System.out.println("Enter -output filename");
-            System.exit(0);
-        }
+//        else {
+//            System.out.println("Enter -output filename");
+//            System.exit(0);
+//        }
     }
     
     final public void setModelFile() {

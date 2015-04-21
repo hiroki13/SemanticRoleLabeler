@@ -7,7 +7,6 @@ package semanticrolelabeler;
 
 import argumentidentifier.ArgumentIdentifier;
 import java.util.ArrayList;
-import java.util.HashMap;
 import predicatedisambiguator.PredicateDisambiguator;
 
 /**
@@ -22,8 +21,6 @@ final public class Mode {
     boolean train, test, eval, output, model, frame, check_accuracy, pd, ai, ac;
     int iteration, restart, weight_length;
     ArrayList<Sentence> trainsentence, testsentence, evalsentence;
-    HashMap framedict, rolesetdict;
-    String lemma, roleset, role;
     
     
     Mode(String[] args) throws Exception{
@@ -58,6 +55,7 @@ final public class Mode {
         check_accuracy = optionparser.isExsist("check");
         weight_length = optionparser.getInt("weight", 1000);
         iteration = optionparser.getInt("iter", 10);
+        restart = optionparser.getInt("restart", 1);
     }    
     
     final public void execute() throws Exception{
@@ -77,9 +75,7 @@ final public class Mode {
                 "Train Sents: %d\nTest Sents: %d",                        
                 trainsentence.size(), testsentence.size()));
 
-            framedict = FrameDict.framedict;
-            System.out.println("Framedict: " + framedict.size());
-            ArrayList a = RoleDict.roledict;
+            System.out.println("Framedict: " + FrameDict.framedict.size());
             System.out.println("Roles: " + RoleDict.roledict.size());
 
             if (pd) {
@@ -112,7 +108,7 @@ final public class Mode {
             System.out.println("\nArgument Classifier Learning START");        
             final Trainer trainer;
             if ("hill".equals(parserselect))
-                trainer = new Trainer(trainsentence, weight_length, true);
+                trainer = new Trainer(trainsentence, weight_length, restart);
             else
                 trainer = new Trainer(trainsentence, weight_length);
             
@@ -121,10 +117,15 @@ final public class Mode {
                 trainer.train();
                 System.out.println();
                 AccuracyChecker checker = new AccuracyChecker();
-                if ("hill".equals(parserselect))
-                    checker.testHill(testsentence, evalsentence, trainer.hillparser);
-                else
-                    checker.testBase(testsentence, evalsentence, trainer.baseparser);                    
+                if ("hill".equals(parserselect)) {
+//                    checker.testHill(testsentence, evalsentence, trainer.hillparser);
+                    checker.testSecondHill(testsentence, evalsentence, trainer.hillparser);
+                    if (i==iteration-1 && output) checker.output(testsentence, outfile);
+                }
+                else {
+                    checker.testBase(testsentence, evalsentence, trainer.baseparser);
+                    if (i==iteration-1 && output) checker.outputBase(testsentence, outfile);
+                }
             }
         }
     }    

@@ -60,6 +60,35 @@ final public class Sentence {
                     token.children.add(child.id);
             }    
         }
+        
+        for (int i=0; i<this.size(); ++i) {
+            final Token token = tokens.get(i);
+            final ArrayList<Integer> children = token.children;
+
+            if (children.isEmpty()) continue;
+
+            int leftmost = 1000;
+            int rightmost = -1;
+            for (int j=0; j<children.size(); ++j) {
+                final int child_id = children.get(j);
+                
+                if (child_id < leftmost)
+                    leftmost = child_id;
+                else if (child_id > rightmost)
+                    rightmost = child_id;
+            }
+            
+            if (leftmost < token.id) {
+                final Token l = tokens.get(leftmost);
+                token.leftmostw = l.form;
+                token.leftmostpos = l.ppos;
+            }
+            if (rightmost > token.id) {
+                final Token r = tokens.get(rightmost);
+                token.rightmostw = r.form;
+                token.rightmostpos = r.ppos;
+            }
+        }        
     }
     
     final void setSubCat() {
@@ -78,19 +107,24 @@ final public class Sentence {
             ArrayList<Integer> child = token.children;
             final TreeSet tmp = new TreeSet();
             final TreeSet tmp2 = new TreeSet();
+            final TreeSet tmp3 = new TreeSet();
             
             for (int j=0; j<child.size(); ++j) {
                 tmp.add(tokens.get(child.get(j)).pdeprel);
                 tmp2.add(tokens.get(child.get(j)).ppos);
+                tmp3.add(tokens.get(child.get(j)).form);
             }
 
             Iterator<String> it = tmp.iterator();
             Iterator<String> it2 = tmp2.iterator();
+            Iterator<String> it3 = tmp3.iterator();
 
             while (it.hasNext())
                 token.childdepset += it.next();
             while (it2.hasNext())
                 token.childposset += it2.next();
+            while (it3.hasNext())
+                token.childwordset += it3.next();
         }
     }
     
@@ -128,6 +162,8 @@ final public class Sentence {
         for (int i=1; i<this.size(); ++i) {        
             Token arg = tokens.get(i);
             arg.apred = new int[preds.length];
+            
+            for (int j=0; j<arg.apred.length; ++j) arg.apred[j] = -1;
         }
     }
 

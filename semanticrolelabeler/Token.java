@@ -31,18 +31,20 @@ final public class Token {
     final public String cpos;
     
     final public ArrayList<Integer> children;
+    public String leftmostw;
+    public String leftmostpos;
+    public String rightmostw;
+    public String rightmostpos;
     public String subcat;
     public String childdepset;
     public String childposset;
+    public String childwordset;
     final public ArrayList<String> leftsiblingw;
     final public ArrayList<String> rightsiblingw;
     final public ArrayList<String> leftsiblingpos;
-    final public ArrayList<String> rightsiblingpos;
-//    public int ppred = 0;
-//    public int[] papred;
-    
+    final public ArrayList<String> rightsiblingpos;    
     public ArrayList<Integer> arguments;
-//    public ArrayList<Integer> parguments;
+
     
     public Token(final String[] line, final boolean test) {
         id = Integer.parseInt(line[0]);
@@ -63,9 +65,14 @@ final public class Token {
         apred = setApred(line, test);
         
         children = new ArrayList<>();
+        leftmostw = "";
+        leftmostpos = "";
+        rightmostw = "";
+        rightmostpos = "";
         subcat = "";
         childdepset = "";
         childposset = "";
+        childwordset = "";
         leftsiblingw = new ArrayList<>();
         rightsiblingw = new ArrayList<>();
         leftsiblingpos = new ArrayList<>();
