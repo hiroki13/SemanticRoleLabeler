@@ -43,7 +43,7 @@ public class BaseParser {
                 for (int arg_i=0; arg_i<arguments.size(); ++arg_i) {
                     final Token arg = sentence.tokens.get(arguments.get(arg_i));
                     final int[] feature = feature_extracter.extractFirstOrdFeature(sentence, prd_i, arg_i);
-                    final int label = decode(pred, feature, false);
+                    final int label = decode(pred, feature);
                     final int o_label = arg.apred[prd_i];
             
                     perceptron.updateWeights(o_label, label, feature);
@@ -86,7 +86,7 @@ public class BaseParser {
 
                     long time1 = System.currentTimeMillis();
                     final int[] feature = feature_extracter.extractFirstOrdFeature(testsentence, prd_i, arg_i);
-                    final int label = decode(pred, feature, true);
+                    final int label = decode(pred, feature);
                     arg.apred[prd_i] = label;
                     long time2 = System.currentTimeMillis();                    
                     time += time2 - time1;
@@ -164,12 +164,7 @@ public class BaseParser {
     }
 
     
-    final public int decode(final Token pred, final int[] feature, final boolean test) {
-//        final ArrayList<Integer> possible_roles;
-//        if (!test)
-//            possible_roles = FrameDict.get(pred.cpos, pred.pred);
-//        else
-//            possible_roles = FrameDict.get(pred.cpos, pred.ppred);
+    final public int decode(final Token pred, final int[] feature) {
         final ArrayList<Integer> possible_roles = RoleDict.rolearray;
         int best_role = -1;
         float best_score = -1000000.0f;

@@ -78,7 +78,6 @@ final public class Token {
         leftsiblingpos = new ArrayList<>();
         rightsiblingpos = new ArrayList<>();
         arguments = new ArrayList<>();
-//        parguments = new ArrayList<>();
     }
 
 /*    
@@ -119,6 +118,7 @@ final public class Token {
         
         if (!test) {
             for (int i=0; i<apred.length; ++i) {
+//                if (!"_".equals(line[14+i]) && !line[14+i].startsWith("R") && !line[14+i].startsWith("C"))
                 if (!"_".equals(line[14+i]))
                     apred[i] = RoleDict.addAndGet(line[14+i]);
                 else

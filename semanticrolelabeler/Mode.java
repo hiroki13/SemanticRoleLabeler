@@ -78,8 +78,20 @@ final public class Mode {
                 "Train Sents: %d\nTest Sents: %d",                        
                 trainsentence.size(), testsentence.size()));
 
+            
+            for (int i=0; i<RoleDict.rolearray.size(); ++i) {
+                final int role1 = RoleDict.rolearray.get(i);
+                RoleDict.biroledict.put(String.valueOf(role1), RoleDict.biroledict.size());
+                
+                for (int j=0; j<RoleDict.rolearray.size(); ++j) {
+                    final int role2 = RoleDict.rolearray.get(j);
+                    RoleDict.biroledict.put(String.valueOf(role1) + "-" + String.valueOf(role2), RoleDict.biroledict.size());
+                }            
+            }
+            
             System.out.println("Framedict: " + FrameDict.framedict.size());
             System.out.println("Roles: " + RoleDict.roledict.size());
+            System.out.println("Roles: " + RoleDict.biroledict.size());
             
             if (pd) {
                 System.out.println("\nPredicate Disambiguator Learning START");        
@@ -108,7 +120,7 @@ final public class Mode {
             }
             
             if (!ac) return;
-            
+
             System.out.println("\nArgument Classifier Learning START");        
             final Trainer trainer;
             if ("hill".equals(parserselect))

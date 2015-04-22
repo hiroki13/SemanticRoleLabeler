@@ -25,6 +25,8 @@ final public class Sentence {
     String[][] dep_pos_path;
     String[][] dep_r_path;
     
+    int max_arg_length;
+    
     public Sentence(int index) {
         this.index = index;
         this.tokens = new ArrayList<>();
@@ -173,11 +175,19 @@ final public class Sentence {
         }
     }
     
+    final public void setMaxArgLength() {
+        for (int i=0; i<preds.length; ++i) {
+            final Token pred = tokens.get(preds[i]);
+            
+            if (pred.arguments.size() > max_arg_length)
+                max_arg_length = pred.arguments.size();
+        }
+    }
+    
     
     final void setArguments() {
         for (int i=0; i<this.preds.length; ++i) {    
             Token pred = tokens.get(preds[i]);
-//            pred.arguments.add(0);
             
             for (int j=1; j<this.size(); ++j) {
                 Token arg = tokens.get(j);
@@ -189,27 +199,6 @@ final public class Sentence {
         
     }
 
-/*    
-    final void setPArguments() {
-        for (int i=0; i<this.preds.length; ++i) {    
-            Token pred = tokens.get(preds[i]);
-//            pred.arguments.add(0);
-            
-            for (int j=1; j<this.size(); ++j) {
-                Token arg = tokens.get(j);
-                
-                if (arg.papred == null) {
-                    continue;
-//                    arg.papred = new int[preds.length];
-                }
-                
-                if (arg.papred[i] > -1)
-                    pred.parguments.add(arg.id);
-            }
-        }
-        
-    }
-*/    
     
     final void setOracleGraph() {
         o_graph = new ArrayList[this.preds.length];

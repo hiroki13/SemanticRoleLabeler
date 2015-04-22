@@ -6,6 +6,7 @@
 package semanticrolelabeler;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  *
@@ -15,6 +16,7 @@ public class RoleDict {
 
     static public ArrayList<String> roledict = new ArrayList();
     static public ArrayList<Integer> rolearray = new ArrayList();
+    static public HashMap<String, Integer> biroledict = new HashMap();
     
     final static public void add(String role) {
         if (roledict.contains(role)) return;

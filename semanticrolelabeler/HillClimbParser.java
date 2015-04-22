@@ -23,7 +23,8 @@ public class HillClimbParser {
 
     public HillClimbParser(final int weight_length, final int restart) {
 //        this.perceptron = new MultiClassPerceptron(RoleDict.size(), weight_length);
-        this.perceptron = new MultiClassPerceptron(RoleDict.size(), RoleDict.size(), weight_length);
+        this.perceptron = new MultiClassPerceptron(RoleDict.biroledict.size(), weight_length);
+//        this.perceptron = new MultiClassPerceptron(RoleDict.size(), RoleDict.size(), weight_length);
         this.feature_extracter = new FeatureExtracter(weight_length);
         this.feature_extracter.g_cache = new ArrayList();
         this.rnd = new Random();
@@ -69,9 +70,6 @@ public class HillClimbParser {
         for (int i=0; i<sentencelist.size(); ++i) {
             final Sentence sentence = sentencelist.get(i);
                         
-//            if (feature_extracter.g_cache.size() < i+1)
-//                feature_extracter.g_cache.add(new String[sentence.preds.length][sentence.size()][]);
-
             if (sentence.preds.length == 0) continue;
             if (checkArguments(sentence)) continue;
 
@@ -81,6 +79,7 @@ public class HillClimbParser {
             
             updateWeights(sentence.o_graph, best_graph, features);
             updateWeights(sentence.o_graph, best_graph, features2);
+            perceptron.t -= 1.0;
 
             checkAccuracy(sentence.o_graph, best_graph);
 
@@ -128,9 +127,6 @@ public class HillClimbParser {
         for (int i=0; i<testsentencelist.size(); ++i) {
             final Sentence sentence = testsentencelist.get(i);
                         
-//            if (feature_extracter.g_cache.size() < i+1)
-//                feature_extracter.g_cache.add(new String[sentence.preds.length][sentence.size()][]);
-
             if (sentence.preds.length == 0) continue;
             if (checkArguments(sentence)) continue;
 
@@ -306,6 +302,8 @@ public class HillClimbParser {
         final ArrayList<Integer>[] propositions = setPropositions2(sentence);
         final float[][][] scores1 = getScores(sentence, propositions, features);
         final float[][][][][][] scores2 = getScores(sentence, propositions, features2);
+        final ArrayList<Integer> proposition = RoleDict.rolearray;
+        final int prop_length = proposition.size();
 
         ArrayList<Integer>[] best_graph = new ArrayList[prds_length];
         float prev_best_score = -10000000000.0f, best_score = -10000000000.0f;
@@ -320,7 +318,7 @@ public class HillClimbParser {
 //                final float overall_score = getOverallScore(prev_graph, scores1) + getOverallScore(prev_graph, scores2);
                 
                 for (int prd_i=0; prd_i<prds_length; ++prd_i) {
-                    final ArrayList<Integer> proposition = propositions[prd_i];
+//                    final ArrayList<Integer> proposition = propositions[prd_i];
 
                     final ArrayList<Integer> arguments = tokens.get(preds[prd_i]).arguments;
 
@@ -335,7 +333,7 @@ public class HillClimbParser {
 //                                     - tmp_scores2[prev_role]
 //                                     - getSecondOrdScores(scores2, propositions, prd_i, arg_i, prev_role);
                         
-                        for (int role_i=0; role_i<proposition.size(); ++role_i) {
+                        for (int role_i=0; role_i<prop_length; ++role_i) {
                             final int role = proposition.get(role_i);
                             final ArrayList<Integer>[] tmp_graph = changeGraph(graph, prd_i, role, arg_i);
                             final float score = getOverallScore(tmp_graph, scores1) + getOverallScore(tmp_graph, scores2);
@@ -494,7 +492,8 @@ public class HillClimbParser {
     final private float[][][] getScores(final Sentence sentence,
                                          final ArrayList<Integer>[] propositions,
                                          final int[][][] features) {
-        final float[][][] scores = new float[sentence.preds.length][sentence.size()][RoleDict.size()];
+//        final float[][][] scores = new float[sentence.preds.length][sentence.size()][RoleDict.size()];
+        final float[][][] scores = new float[sentence.preds.length][sentence.max_arg_length][RoleDict.size()];
         
         for (int prd_i=0; prd_i<sentence.preds.length; ++prd_i) {
             final float[][] tmp_scores = scores[prd_i];
@@ -509,8 +508,7 @@ public class HillClimbParser {
                 
                 for (int role_i=0; role_i<proposition.size(); ++role_i) {
                     final int role = proposition.get(role_i);
-//                    tmp_scores2[role] = calcScore(feature, role);
-                    tmp_scores2[role] = calcScore(feature, role);
+                    tmp_scores2[role] = calcScore(feature, RoleDict.biroledict.get(String.valueOf(role)));
                 }
             }
         }
@@ -521,7 +519,8 @@ public class HillClimbParser {
     final private float[][][][][][] getScores(final Sentence sentence,
                                                final ArrayList<Integer>[] propositions,
                                                final int[][][][][] features2) {
-        final float[][][][][][] scores = new float[sentence.preds.length][sentence.size()][RoleDict.size()][sentence.preds.length][sentence.size()][RoleDict.size()];
+//        final float[][][][][][] scores = new float[sentence.preds.length][sentence.size()][RoleDict.size()][sentence.preds.length][sentence.size()][RoleDict.size()];
+        final float[][][][][][] scores = new float[sentence.preds.length][sentence.max_arg_length][RoleDict.size()][sentence.preds.length][sentence.max_arg_length][RoleDict.size()];
         
         for (int prd_i=0; prd_i<sentence.preds.length; ++prd_i) {
             final float[][][][][] tmp_scores = scores[prd_i];
@@ -558,7 +557,8 @@ public class HillClimbParser {
 
                             for (int role_j=0; role_j<proposition2.size(); ++role_j) {
                                 final int role2 = proposition2.get(role_j);
-                                tmp_scores5[role2] = calcScore(tmp_features4, role1, role2);
+                                tmp_scores5[role2] = calcScore(tmp_features4, RoleDict.biroledict.get(String.valueOf(role1) + "-" + String.valueOf(role2)));
+//                                tmp_scores5[role2] = calcScore(tmp_features4, role1, role2);
                             }
                         }
                     }
@@ -685,7 +685,8 @@ public class HillClimbParser {
     final public int[][][] createFeatures(final Sentence sentence, final boolean test) {
         final ArrayList<Token> tokens = sentence.tokens;
         final int[] preds = sentence.preds;
-        final int[][][] features = new int[preds.length][sentence.size()][];
+//        final int[][][] features = new int[preds.length][sentence.size()][];
+        final int[][][] features = new int[preds.length][sentence.max_arg_length][];
         
         for (int prd_i=0; prd_i<preds.length; ++prd_i) {
             final int[][] tmp_features = features[prd_i];
@@ -704,7 +705,8 @@ public class HillClimbParser {
                                                        final boolean test) {
         final ArrayList<Token> tokens = sentence.tokens;
         final int[] preds = sentence.preds;
-        final int[][][][][] features = new int[preds.length][sentence.size()][preds.length][sentence.size()][];
+//        final int[][][][][] features = new int[preds.length][sentence.size()][preds.length][sentence.size()][];
+        final int[][][][][] features = new int[preds.length][sentence.max_arg_length][preds.length][sentence.max_arg_length][];
         
         for (int prd_i=0; prd_i<preds.length; ++prd_i) {
             final int[][][][] tmp_features = features[prd_i];
@@ -737,11 +739,11 @@ public class HillClimbParser {
     final private float calcScore(final int[] feature, final int label){
         return perceptron.calcScore(feature, label);
     }
-
+/*
     final private float calcScore(final int[] feature, final int label1, final int label2){
         return perceptron.calcScore(feature, label1, label2);
     }
-
+*/
     
     final public void checkAccuracy(final ArrayList<Integer>[] o_graph,
                                       final ArrayList<Integer>[] graph) {
@@ -781,8 +783,8 @@ public class HillClimbParser {
                 final int o_role = tmp_o_graph.get(j);
                 final int role = tmp_graph.get(j);
                 final int[] feature = tmp_features[j];
-                
-                perceptron.updateWeights(o_role, role, feature);
+                perceptron.updateWeights(RoleDict.biroledict.get(String.valueOf(o_role)), RoleDict.biroledict.get(String.valueOf(role)), feature);
+//                perceptron.updateWeights(o_role, role, feature);
             }
         }
     }
@@ -814,7 +816,10 @@ public class HillClimbParser {
                         final int role2 = tmp_graph2.get(arg_j);
                         final int[] feature = tmp_features3[arg_j];
                 
-                        perceptron.updateWeights(o_role1, o_role2, role1, role2, feature);
+                        perceptron.updateWeights(RoleDict.biroledict.get(String.valueOf(o_role1) + "-" + String.valueOf(o_role2)),
+                                                 RoleDict.biroledict.get(String.valueOf(role1) + "-" + String.valueOf(role2)),
+                                                 feature);
+//                        perceptron.updateWeights(o_role1, o_role2, role1, role2, feature);
                     }
                 }
                 

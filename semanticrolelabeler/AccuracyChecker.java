@@ -41,7 +41,7 @@ final public class AccuracyChecker {
                                        final HillClimbParser p){
         h_parser = new HillClimbParser(p.perceptron.weight[0].length, p.restart);
         h_parser.perceptron.weight = averagingWeights(p.perceptron);
-        h_parser.perceptron.w = averagingWeightsSecond(p.perceptron);
+//        h_parser.perceptron.w = averagingWeightsSecond(p.perceptron);
         h_parser.testSecond(testsentencelist);
         h_parser.eval(testsentencelist, evalsentencelist);                
     }
@@ -290,7 +290,7 @@ final public class AccuracyChecker {
 
         return new_weight;
     }
-
+/*
     final private float[][][] averagingWeightsSecond(final MultiClassPerceptron p){
         final float[][][] new_weight = new float[p.w.length][p.w[0].length][p.w[0][0].length];
         
@@ -311,7 +311,7 @@ final public class AccuracyChecker {
 
         return new_weight;
     }
-
+*/
     final private float[] averagingWeights(final Perceptron p){
         final float[] new_weight = new float[p.weight.length];
         

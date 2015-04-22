@@ -45,8 +45,9 @@ final public class FeatureExtracter implements Serializable{
         final int[] encoded_feature = encodeFeature2(feature);
         return encoded_feature;        
     }
-    
-/*    final public String[] instantiateFirstOrdFeature(final Sentence sentence,
+
+/*    
+    final public String[] instantiateFirstOrdFeature(final Sentence sentence,
                                                         final int prd_i,
                                                         final int arg_i) {
         k = 0;        
