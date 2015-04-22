@@ -182,7 +182,7 @@ final public class AccuracyChecker {
     
     final public String setArgument(final Sentence sentence, final Token t) {
         final int[] preds = sentence.preds;
-        final ArrayList<Integer>[] graph = sentence.p_graph;
+        final int[][] graph = sentence.p_graph;
         String text = "";
 
         if (graph == null) {
@@ -194,15 +194,16 @@ final public class AccuracyChecker {
         for (int i=0; i<graph.length; ++i) {
             boolean flag = true;
             final Token pred = sentence.tokens.get(preds[i]);
-            final ArrayList<Integer> t_graph = graph[i];
+            final int[] t_graph = graph[i];
             final ArrayList<Integer> arguments = pred.arguments;
+            final int arg_length = arguments.size();
             
-            for (int j=0; j<t_graph.size(); ++j) {
+            for (int j=0; j<arg_length; ++j) {
                 final int arg_id = arguments.get(j);
                 
                 if (t.id != arg_id) continue;
                 
-                final int role_id = t_graph.get(j);
+                final int role_id = t_graph[j];
                 final String role = RoleDict.roledict.get(role_id);
                 text += role + "\t";
                 flag = false;
@@ -290,28 +291,8 @@ final public class AccuracyChecker {
 
         return new_weight;
     }
-/*
-    final private float[][][] averagingWeightsSecond(final MultiClassPerceptron p){
-        final float[][][] new_weight = new float[p.w.length][p.w[0].length][p.w[0][0].length];
-        
-        for (int i = 0; i<p.w.length; i++) {
-            final float[][] tmp_new_weight = new_weight[i];
-            final float[][] tmp_weight = p.w[i];
-            final float[][] tmp_aweight = p.aw[i];
-            
-            for (int j = 0; j<tmp_weight.length; ++j) {
-                final float[] tmp_new_weight2 = tmp_new_weight[j];
-                final float[] tmp_weight2 = tmp_weight[j];
-                final float[] tmp_aweight2 = tmp_aweight[j];
-                
-                for (int k=0; k<tmp_weight2.length; ++k)
-                    tmp_new_weight2[k] = tmp_weight2[k] - tmp_aweight2[k] /p.t;                
-            }
-        }
 
-        return new_weight;
-    }
-*/
+    
     final private float[] averagingWeights(final Perceptron p){
         final float[] new_weight = new float[p.weight.length];
         

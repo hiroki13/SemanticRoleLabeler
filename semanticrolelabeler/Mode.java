@@ -91,7 +91,7 @@ final public class Mode {
             
             System.out.println("Framedict: " + FrameDict.framedict.size());
             System.out.println("Roles: " + RoleDict.roledict.size());
-            System.out.println("Roles: " + RoleDict.biroledict.size());
+            System.out.println("BiRoles: " + RoleDict.biroledict.size());
             
             if (pd) {
                 System.out.println("\nPredicate Disambiguator Learning START");        

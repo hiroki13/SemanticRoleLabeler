@@ -18,8 +18,8 @@ final public class Sentence {
     final public int index;
     final public ArrayList<Token> tokens;
     public int[] preds;
-    public ArrayList<Integer>[] o_graph;
-    public ArrayList<Integer>[] p_graph;
+    public int[][] o_graph;
+    public int[][] p_graph;
 
     String[][] dep_path;
     String[][] dep_pos_path;
@@ -201,19 +201,22 @@ final public class Sentence {
 
     
     final void setOracleGraph() {
-        o_graph = new ArrayList[this.preds.length];
+        o_graph = new int[this.preds.length][max_arg_length];
 
         for (int i=0; i<this.preds.length; ++i) {
-            o_graph[i] = new ArrayList();
-
             final Token pred = this.tokens.get(this.preds[i]);
-            final ArrayList<Integer> tmp_graph = o_graph[i];
+            final int[] tmp_graph = o_graph[i];
             final ArrayList<Integer> arguments = pred.arguments;
+            final int arg_length = arguments.size();
 
-            for (int j=0; j<arguments.size(); ++j) {
-                final int arg_i = arguments.get(j);
-                final Token arg = tokens.get(arg_i);
-                tmp_graph.add(arg.apred[i]);
+            for (int j=0; j<max_arg_length; ++j) {
+                if (j<arg_length) {
+                    final int arg_i = arguments.get(j);
+                    final Token arg = tokens.get(arg_i);
+                    tmp_graph[j] = arg.apred[i];
+                }
+                else
+                    tmp_graph[j] = -1;
             }
         }
     }
@@ -246,12 +249,12 @@ final public class Sentence {
         for (int i=0; i<preds.length; ++i) {
             final Token prd = tokens.get(preds[i]);
             
-            for (int j=0; j<this.size(); ++j) {
+            for (int j=1; j<this.size(); ++j) {
                 Token arg = tokens.get(j);
         
                 ArrayList path = getDependencyPath(arg, prd);
-                String d_path = getDepPathPhi(path);
-                String[] dep_info_path = getDepInfoPathPhi(path);
+                String d_path = getDepPathPhi(path, j);
+                String[] dep_info_path = getDepInfoPathPhi(path, d_path);
                 
                 dep_path[i][j] = d_path;
                 dep_pos_path[i][j] = dep_info_path[0];
@@ -318,24 +321,28 @@ final public class Sentence {
         return root;
     }
     
-    final private String getDepPathPhi(final ArrayList<Integer> path) {
+    final private String getDepPathPhi(final ArrayList<Integer> path,
+                                         final int arg_id) {
         String dep_path = "";
         int node = path.get(0);
         int tmp_node;
         
         if (node == -2) return "NULL";
         else if (node == -1) return "SAME";
+
+        ArrayList arg_path = searchRootPath(arg_id, new ArrayList<>());
         
         for (int i=1; i<path.size(); ++i) {
             tmp_node = path.get(i);
-            if (tmp_node > node) dep_path += "0";
+            if (arg_path.contains(tmp_node)) dep_path += "0";
             else dep_path += "1";
             node = tmp_node;
         }
         return dep_path;
     }
 
-    final private String[] getDepInfoPathPhi(final ArrayList<Integer> path) {
+    final private String[] getDepInfoPathPhi(final ArrayList<Integer> path,
+                                                final String d_path) {
         String dep_pos_path = "";
         String dep_r_path = "";
         
@@ -344,9 +351,15 @@ final public class Sentence {
         if (node == -2) return new String[]{"NULL","NULL"};
         else if (node == -1) return new String[]{"SAME","SAME"};        
         
-        for (int i=1; i<path.size(); ++i) {
+        for (int i=0; i<path.size()-1; ++i) {
             final int tmp_node = path.get(i);
-            Token token = tokens.get(tmp_node);
+            final String d_tmp_node = d_path.substring(i, i+1);
+            
+            Token token;
+            if ("0".equals(d_tmp_node))
+                token = tokens.get(tmp_node);
+            else
+                token = tokens.get(path.get(i+1));
             dep_pos_path += token.ppos;
             dep_r_path += token.pdeprel;
         }

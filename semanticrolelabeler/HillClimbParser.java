@@ -24,7 +24,6 @@ public class HillClimbParser {
     public HillClimbParser(final int weight_length, final int restart) {
 //        this.perceptron = new MultiClassPerceptron(RoleDict.size(), weight_length);
         this.perceptron = new MultiClassPerceptron(RoleDict.biroledict.size(), weight_length);
-//        this.perceptron = new MultiClassPerceptron(RoleDict.size(), RoleDict.size(), weight_length);
         this.feature_extracter = new FeatureExtracter(weight_length);
         this.feature_extracter.g_cache = new ArrayList();
         this.rnd = new Random();
@@ -44,8 +43,8 @@ public class HillClimbParser {
             if (sentence.preds.length == 0) continue;
             if (checkArguments(sentence)) continue;
 
-            final int[][][] features = createFeatures(sentence, false);
-            ArrayList<Integer>[] best_graph = decode(sentence, features, false);
+            final int[][][] features = createFeatures(sentence);
+            final int[][] best_graph = decode(sentence, features);
             
             updateWeights(sentence.o_graph, best_graph, features);
 
@@ -73,9 +72,9 @@ public class HillClimbParser {
             if (sentence.preds.length == 0) continue;
             if (checkArguments(sentence)) continue;
 
-            final int[][][] features = createFeatures(sentence, false);
-            final int[][][][][] features2 = createSecondFeatures(sentence, false);
-            ArrayList<Integer>[] best_graph = decodeSecond(sentence, features, features2, false);
+            final int[][][] features = createFeatures(sentence);
+            final int[][][][][] features2 = createSecondFeatures(sentence);
+            final int[][] best_graph = decodeSecond(sentence, features, features2);
             
             updateWeights(sentence.o_graph, best_graph, features);
             updateWeights(sentence.o_graph, best_graph, features2);
@@ -83,9 +82,9 @@ public class HillClimbParser {
 
             checkAccuracy(sentence.o_graph, best_graph);
 
-//            if (i%100 == 0 && i != 0) {
+            if (i%100 == 0 && i != 0) {
                 System.out.print(String.format("%d ", i));
-//            }
+            }
             
         }
         
@@ -108,8 +107,8 @@ public class HillClimbParser {
             if (checkArguments(sentence)) continue;
 
             long time1 = System.currentTimeMillis();
-            final int[][][] features = createFeatures(sentence, true);
-            sentence.p_graph = decode(sentence, features, true);
+            final int[][][] features = createFeatures(sentence);
+            sentence.p_graph = decode(sentence, features);
             long time2 = System.currentTimeMillis();
 
             time += time2 - time1;
@@ -131,16 +130,16 @@ public class HillClimbParser {
             if (checkArguments(sentence)) continue;
 
             long time1 = System.currentTimeMillis();
-            final int[][][] features = createFeatures(sentence, true);
-            final int[][][][][] features2 = createSecondFeatures(sentence, true);
-            sentence.p_graph = decodeSecond(sentence, features, features2, true);
+            final int[][][] features = createFeatures(sentence);
+            final int[][][][][] features2 = createSecondFeatures(sentence);
+            sentence.p_graph = decodeSecond(sentence, features, features2);
             long time2 = System.currentTimeMillis();
 
             time += time2 - time1;
             
-//            if (i%100 == 0 && i != 0) {
+            if (i%100 == 0 && i != 0) {
                 System.out.print(String.format("%d ", i));
-//            }
+            }
             
         }
     }
@@ -161,8 +160,8 @@ public class HillClimbParser {
             final ArrayList<Token> o_tokens = evalsentence.tokens;
             final ArrayList<Token> tokens = testsentence.tokens;
 
-            final ArrayList<Integer>[] o_graph = evalsentence.o_graph;
-            final ArrayList<Integer>[] p_graph = testsentence.p_graph;
+            final int[][] o_graph = evalsentence.o_graph;
+            final int[][] p_graph = testsentence.p_graph;
                         
             if (p_graph == null && o_graph != null) {
                 for (int j=0; j<o_graph.length; ++j) {
@@ -183,8 +182,8 @@ public class HillClimbParser {
             }
             
             for (int j=0; j<p_graph.length; ++j) {
-                final ArrayList<Integer> p_roles = p_graph[j];
-                final ArrayList<Integer> o_roles = o_graph[j];
+                final int[] p_roles = p_graph[j];
+                final int[] o_roles = o_graph[j];
                 
                 final ArrayList<Integer> arguments = tokens.get(testsentence.preds[j]).arguments;
                 final ArrayList<Integer> o_arguments = o_tokens.get(evalsentence.preds[j]).arguments;
@@ -193,7 +192,7 @@ public class HillClimbParser {
                 
                 for (int k=0; k<arguments.size(); ++k) {
                     final int arg_id = arguments.get(k);
-                    final int role = p_roles.get(k);
+                    final int role = p_roles[k];
                     
                     if (match(arg_id, role, o_roles, o_arguments)) correct += 1.0f;
                 }
@@ -211,11 +210,11 @@ public class HillClimbParser {
         
     }
     
-    final private boolean match(final int arg_id, final int role,
-                                 final ArrayList<Integer> o_roles, ArrayList<Integer> o_arguments) {
+    final private boolean match(final int arg_id, final int role, final int[] o_roles,
+                                 final ArrayList<Integer> o_arguments) {
         for (int i=0; i<o_arguments.size(); ++i) {
             final int o_arg_id = o_arguments.get(i);
-            final int o_role = o_roles.get(i);
+            final int o_role = o_roles[i];
             
             if (arg_id == o_arg_id && role == o_role) return true;
         }
@@ -223,25 +222,24 @@ public class HillClimbParser {
     }
     
     
-    final public ArrayList<Integer>[] decode(final Sentence sentence,
-                                              final int[][][] features,
-                                              final boolean test) {
+    final public int[][] decode(final Sentence sentence, final int[][][] features) {
         final ArrayList<Token> tokens = sentence.tokens;
         final int[] preds = sentence.preds;
         final int prds_length = sentence.preds.length;
+        final int max_arg_length = sentence.max_arg_length;
         final ArrayList<Integer>[] propositions = setPropositions2(sentence);
         final float[][][] scores = getScores(sentence, propositions, features);
 
-        ArrayList<Integer>[] best_graph = new ArrayList[prds_length];
+        int[][] best_graph = new int[prds_length][max_arg_length];
         float prev_best_score = -10000000000.0f, best_score = -10000000000.0f;
         int best_arg_i = -1, best_prd = -1, best_role = -1;
         int prev_best_arg_i = -1, prev_best_prd = -1, prev_best_role = -1;
 
         for (int i=0; i<restart; ++i) {
-            ArrayList<Integer>[] graph = setInitGraph(sentence, propositions);
+            int[][] graph = setInitGraph(sentence, propositions);
 
             while (true) {
-                final ArrayList<Integer>[] prev_graph = copyGraph(graph);
+                final int[][] prev_graph = copyGraph(graph);
                 final float overall_score = getOverallScore(prev_graph, scores);
                 
                 for (int prd_i=0; prd_i<prds_length; ++prd_i) {
@@ -249,11 +247,11 @@ public class HillClimbParser {
 
                     final ArrayList<Integer> arguments = tokens.get(preds[prd_i]).arguments;
 
-                    final ArrayList<Integer> tmp_prev_graph = prev_graph[prd_i];
+                    final int[] tmp_prev_graph = prev_graph[prd_i];
                     final float[][] tmp_scores = scores[prd_i];
 
                     for (int arg_i=0; arg_i<arguments.size(); ++arg_i) {
-                        final int prev_role = tmp_prev_graph.get(arg_i);
+                        final int prev_role = tmp_prev_graph[arg_i];
                         final float[] tmp_scores2 = tmp_scores[arg_i];
                         final float tmp_overall_score = overall_score - tmp_scores2[prev_role];
                         
@@ -271,7 +269,7 @@ public class HillClimbParser {
                     }
                 }
                 
-                graph[best_prd].set(best_arg_i, best_role);
+                graph[best_prd][best_arg_i] = best_role;
 
                 if (best_prd == prev_best_prd && best_arg_i == prev_best_arg_i && best_role == prev_best_role)
                     break;
@@ -292,52 +290,38 @@ public class HillClimbParser {
     }
 
     
-    final public ArrayList<Integer>[] decodeSecond(final Sentence sentence,
-                                                     final int[][][] features,
-                                                     final int[][][][][] features2,
-                                                     final boolean test) {
+    final public int[][] decodeSecond(final Sentence sentence,
+                                        final int[][][] features,
+                                        final int[][][][][] features2) {
         final ArrayList<Token> tokens = sentence.tokens;
         final int[] preds = sentence.preds;
         final int prds_length = sentence.preds.length;
+        final int max_arg_length = sentence.max_arg_length;
         final ArrayList<Integer>[] propositions = setPropositions2(sentence);
         final float[][][] scores1 = getScores(sentence, propositions, features);
         final float[][][][][][] scores2 = getScores(sentence, propositions, features2);
         final ArrayList<Integer> proposition = RoleDict.rolearray;
         final int prop_length = proposition.size();
 
-        ArrayList<Integer>[] best_graph = new ArrayList[prds_length];
+        int[][] best_graph = new int[prds_length][max_arg_length];
         float prev_best_score = -10000000000.0f, best_score = -10000000000.0f;
         int best_arg_i = -1, best_prd = -1, best_role = -1;
         int prev_best_arg_i = -1, prev_best_prd = -1, prev_best_role = -1;
 
         for (int i=0; i<restart; ++i) {
-            ArrayList<Integer>[] graph = setInitGraph(sentence, propositions);
+            int[][] graph = setInitGraph(sentence, propositions);
 
             while (true) {
-//                final ArrayList<Integer>[] prev_graph = copyGraph(graph);
-//                final float overall_score = getOverallScore(prev_graph, scores1) + getOverallScore(prev_graph, scores2);
                 
                 for (int prd_i=0; prd_i<prds_length; ++prd_i) {
-//                    final ArrayList<Integer> proposition = propositions[prd_i];
-
                     final ArrayList<Integer> arguments = tokens.get(preds[prd_i]).arguments;
 
-//                    final ArrayList<Integer> tmp_prev_graph = prev_graph[prd_i];
-//                    final float[][] tmp_scores = scores1[prd_i];
-
                     for (int arg_i=0; arg_i<arguments.size(); ++arg_i) {
-//                        final int prev_role = tmp_prev_graph.get(arg_i);
-//                        final float[] tmp_scores2 = tmp_scores[arg_i];
-                        
-//                        final float tmp_overall_score = overall_score
-//                                     - tmp_scores2[prev_role]
-//                                     - getSecondOrdScores(scores2, propositions, prd_i, arg_i, prev_role);
                         
                         for (int role_i=0; role_i<prop_length; ++role_i) {
                             final int role = proposition.get(role_i);
-                            final ArrayList<Integer>[] tmp_graph = changeGraph(graph, prd_i, role, arg_i);
+                            final int[][] tmp_graph = changeGraph(graph, prd_i, role, arg_i);
                             final float score = getOverallScore(tmp_graph, scores1) + getOverallScore(tmp_graph, scores2);
-//                            float score = tmp_overall_score + tmp_scores2[role] + getSecondOrdScores(scores2, propositions, prd_i, arg_i, role);
                             
                             if (score > best_score) {
                                 best_score = score;
@@ -349,7 +333,7 @@ public class HillClimbParser {
                     }
                 }
                 
-                graph[best_prd].set(best_arg_i, best_role);
+                graph[best_prd][best_arg_i] = best_role;
 
                 if (best_prd == prev_best_prd && best_arg_i == prev_best_arg_i && best_role == prev_best_role)
                     break;
@@ -393,78 +377,60 @@ public class HillClimbParser {
     }
     
     
-    final private ArrayList<Integer>[] setInitGraph(final Sentence sentence,
-                                                      final ArrayList<Integer>[] propositions) {
+    final private int[][] setInitGraph(final Sentence sentence,
+                                        final ArrayList<Integer>[] propositions) {
         final int prds_length = sentence.preds.length;
         final ArrayList<Token> tokens = sentence.tokens;
         final int[] preds = sentence.preds;
-        final ArrayList<Integer>[] graph = new ArrayList[prds_length];
+        final int max_arg_length = sentence.max_arg_length;
+        final int[][] graph = new int[prds_length][max_arg_length];
 
         for (int prd_i=0; prd_i<graph.length; ++prd_i) {
-            final ArrayList<Integer> tmp_graph = new ArrayList();
+            final int[] tmp_graph = new int[max_arg_length];
             final Token pred = tokens.get(preds[prd_i]);
-            final ArrayList arguments = pred.arguments;
+            final int arg_length = pred.arguments.size();
             final ArrayList<Integer> proposition = propositions[prd_i];
             final int prop_length = proposition.size();
 
-            for (int j=0; j<arguments.size(); ++j)
-                tmp_graph.add(proposition.get(rnd.nextInt(prop_length)));
-            
+            for (int j=0; j<max_arg_length; ++j) {
+                if (j < arg_length)
+                    tmp_graph[j] = proposition.get(rnd.nextInt(prop_length));
+                else
+                    tmp_graph[j] = -1;
+            }
             graph[prd_i] = tmp_graph;
         }
         
         return graph;
     }
-
-    final private HashMap<String, Integer>[] setInitZeroGraph(final Sentence sentence,
-                                               final ArrayList<String>[] propositions) {
-        final int prds_length = sentence.preds.length;
-        final HashMap<String, Integer>[] graph = new HashMap[prds_length];
-
-        for (int i=0; i<graph.length; ++i) {
-            final HashMap<String, Integer> tmp_graph = new HashMap<>();
-            final ArrayList<String> proposition = propositions[i];
-
-            for (int j=0; j<proposition.size(); ++j)
-                tmp_graph.put(proposition.get(j), 0);
-            
-            graph[i] = tmp_graph;
-        }
-        
-        return graph;
-    }
     
-    final private ArrayList<Integer>[] copyGraph(final ArrayList<Integer>[] graph) {
-        final ArrayList<Integer>[] copied_graph = new ArrayList[graph.length];
+    final private int[][] copyGraph(final int[][] graph) {
+        final int[][] copied_graph = new int[graph.length][graph[0].length];
 
         for (int i=0; i<copied_graph.length; ++i) {
-            copied_graph[i] = new ArrayList();
-            final ArrayList<Integer> tmp_graph = graph[i];
-            final ArrayList<Integer> tmp_copied_graph = copied_graph[i];
+            final int[] tmp_graph = graph[i];
+            final int[] tmp_copied_graph = copied_graph[i];
             
-            for (int j=0; j<tmp_graph.size(); ++j)
-                tmp_copied_graph.add(tmp_graph.get(j));
+            for (int j=0; j<tmp_graph.length; ++j)
+                tmp_copied_graph[j] = tmp_graph[j];
         }
         
         return copied_graph;
     }
 
-    final private ArrayList<Integer>[] changeGraph(final ArrayList<Integer>[] graph,
-                                                    final int prd_i,
-                                                    final int target_role,
-                                                    final int arg_i) {
-        final ArrayList<Integer>[] copied_graph = new ArrayList[graph.length];
+    final private int[][] changeGraph(final int[][] graph, final int prd_i,
+                                       final int target_role, final int arg_i) {
+        final int[][] copied_graph = new int[graph.length][graph[0].length];
 
         for (int i=0; i<copied_graph.length; ++i) {
-            copied_graph[i] = new ArrayList();
-            final ArrayList<Integer> tmp_graph = graph[i];
-            final ArrayList<Integer> tmp_copied_graph = copied_graph[i];
+            final int[] tmp_graph = graph[i];
+            final int[] tmp_copied_graph = copied_graph[i];
             
-            for (int j=0; j<tmp_graph.size(); ++j) {
+            for (int j=0; j<tmp_graph.length; ++j) {
                 if (i==prd_i && j==arg_i)
-                    tmp_copied_graph.add(target_role);
+                    tmp_copied_graph[j] = target_role;
                 else
-                    tmp_copied_graph.add(tmp_graph.get(j));
+                    tmp_copied_graph[j] = tmp_graph[j];
             }
         }
         
@@ -570,16 +536,17 @@ public class HillClimbParser {
     }
     
 
-    final private float getOverallScore(final ArrayList<Integer>[] graph,
+    final private float getOverallScore(final int[][] graph,
                                           final float[][][] scores) {
         float score = 0.0f;
         
         for (int prd_i=0; prd_i<graph.length; ++prd_i) {
-            final ArrayList<Integer> tmp_graph = graph[prd_i];
+            final int[] tmp_graph = graph[prd_i];
             final float[][] tmp_scores = scores[prd_i];
             
-            for (int arg_i=0; arg_i<tmp_graph.size(); ++arg_i) {
-                final int role = tmp_graph.get(arg_i);
+            for (int arg_i=0; arg_i<tmp_graph.length; ++arg_i) {
+                final int role = tmp_graph[arg_i];
+                if (role < 0) break;
                 score += tmp_scores[arg_i][role];
             }
         }
@@ -587,28 +554,30 @@ public class HillClimbParser {
         return score;
     }
 
-    final private float getOverallScore(final ArrayList<Integer>[] graph,
+    final private float getOverallScore(final int[][] graph,
                                           final float[][][][][][] scores) {
         float score = 0.0f;
         
         for (int prd_i=0; prd_i<graph.length; ++prd_i) {
-            final ArrayList<Integer> tmp_graph = graph[prd_i];
+            final int[] tmp_graph = graph[prd_i];
             final float[][][][][] tmp_scores = scores[prd_i];
             
-            for (int arg_i=0; arg_i<tmp_graph.size(); ++arg_i) {
-                final int role1 = tmp_graph.get(arg_i);
+            for (int arg_i=0; arg_i<tmp_graph.length; ++arg_i) {
+                final int role1 = tmp_graph[arg_i];
+                if (role1 < 0) break;
                 final float[][][] tmp_scores2 = tmp_scores[arg_i][role1];
                 
                 for (int prd_j=prd_i; prd_j<graph.length; ++prd_j) {
-                    final ArrayList<Integer> tmp_graph2 = graph[prd_j];
+                    final int[] tmp_graph2 = graph[prd_j];
                     final float[][] tmp_scores3 = tmp_scores2[prd_j];
             
                     final int p;
                     if (prd_i == prd_j) p = arg_i+1;
                     else p=0;
                                         
-                    for (int arg_j=p; arg_j<tmp_graph2.size(); ++arg_j) {
-                        final int role2 = tmp_graph2.get(arg_j);
+                    for (int arg_j=p; arg_j<tmp_graph2.length; ++arg_j) {
+                        final int role2 = tmp_graph2[arg_j];
+                        if (role2 < 0) break;
                         score += tmp_scores3[arg_j][role2];
                     }
                 }
@@ -682,10 +651,9 @@ public class HillClimbParser {
         return hamming;
     }
     
-    final public int[][][] createFeatures(final Sentence sentence, final boolean test) {
+    final public int[][][] createFeatures(final Sentence sentence) {
         final ArrayList<Token> tokens = sentence.tokens;
         final int[] preds = sentence.preds;
-//        final int[][][] features = new int[preds.length][sentence.size()][];
         final int[][][] features = new int[preds.length][sentence.max_arg_length][];
         
         for (int prd_i=0; prd_i<preds.length; ++prd_i) {
@@ -701,11 +669,9 @@ public class HillClimbParser {
         return features;
     }
     
-    final public int[][][][][] createSecondFeatures(final Sentence sentence,
-                                                       final boolean test) {
+    final public int[][][][][] createSecondFeatures(final Sentence sentence) {
         final ArrayList<Token> tokens = sentence.tokens;
         final int[] preds = sentence.preds;
-//        final int[][][][][] features = new int[preds.length][sentence.size()][preds.length][sentence.size()][];
         final int[][][][][] features = new int[preds.length][sentence.max_arg_length][preds.length][sentence.max_arg_length][];
         
         for (int prd_i=0; prd_i<preds.length; ++prd_i) {
@@ -739,25 +705,18 @@ public class HillClimbParser {
     final private float calcScore(final int[] feature, final int label){
         return perceptron.calcScore(feature, label);
     }
-/*
-    final private float calcScore(final int[] feature, final int label1, final int label2){
-        return perceptron.calcScore(feature, label1, label2);
-    }
-*/
     
-    final public void checkAccuracy(final ArrayList<Integer>[] o_graph,
-                                      final ArrayList<Integer>[] graph) {
+    final public void checkAccuracy(final int[][] o_graph, final int[][] graph) {
         for (int i=0; i<o_graph.length; ++i) {
-            final ArrayList<Integer> tmp_graph1 = o_graph[i];
-            final ArrayList<Integer> tmp_graph2 = graph[i];
+            final int[] tmp_graph1 = o_graph[i];
+            final int[] tmp_graph2 = graph[i];
             
-            for (int j=0; j<tmp_graph1.size(); ++j) {
-                final int role1 = tmp_graph1.get(j);
-                final int role2 = tmp_graph2.get(j);
+            for (int j=0; j<tmp_graph1.length; ++j) {
+                final int role1 = tmp_graph1[j];
+                final int role2 = tmp_graph2[j];
+                if (role2 < 0) break;
                 
-                if (role1 == role2) {
-                    correct += 1.0f;
-                }
+                if (role1 == role2) correct += 1.0f;
                 total += 1.0f;
             }
         }
@@ -771,61 +730,62 @@ public class HillClimbParser {
         return true;
     }
     
-    final private void updateWeights(final ArrayList<Integer>[] o_graph,
-                                       final ArrayList<Integer>[] graph,
+    final private void updateWeights(final int[][] o_graph,
+                                       final int[][] graph,
                                        final int[][][] features) {
         for (int i=0; i<o_graph.length; ++i) {
-            final ArrayList<Integer> tmp_o_graph = o_graph[i];
-            final ArrayList<Integer> tmp_graph = graph[i];
+            final int[] tmp_o_graph = o_graph[i];
+            final int[] tmp_graph = graph[i];
             final int[][] tmp_features = features[i];
             
-            for (int j=0; j<tmp_o_graph.size(); ++j) {
-                final int o_role = tmp_o_graph.get(j);
-                final int role = tmp_graph.get(j);
+            for (int j=0; j<tmp_o_graph.length; ++j) {
+                final int o_role = tmp_o_graph[j];
+                final int role = tmp_graph[j];
+                if (role < 0) break;
                 final int[] feature = tmp_features[j];
-                perceptron.updateWeights(RoleDict.biroledict.get(String.valueOf(o_role)), RoleDict.biroledict.get(String.valueOf(role)), feature);
-//                perceptron.updateWeights(o_role, role, feature);
+                perceptron.updateWeights(RoleDict.biroledict.get(String.valueOf(o_role)),
+                                         RoleDict.biroledict.get(String.valueOf(role)),
+                                         feature);
             }
         }
     }
 
-    final private void updateWeights(final ArrayList<Integer>[] o_graph,
-                                       final ArrayList<Integer>[] graph,
+    final private void updateWeights(final int[][] o_graph,
+                                       final int[][] graph,
                                        final int[][][][][] features) {
         for (int prd_i=0; prd_i<o_graph.length; ++prd_i) {
-            final ArrayList<Integer> tmp_o_graph1 = o_graph[prd_i];
-            final ArrayList<Integer> tmp_graph1 = graph[prd_i];
+            final int[] tmp_o_graph1 = o_graph[prd_i];
+            final int[] tmp_graph1 = graph[prd_i];
             final int[][][][] tmp_features = features[prd_i];
             
-            for (int arg_i=0; arg_i<tmp_o_graph1.size(); ++arg_i) {
-                final int o_role1 = tmp_o_graph1.get(arg_i);
-                final int role1 = tmp_graph1.get(arg_i);
+            for (int arg_i=0; arg_i<tmp_o_graph1.length; ++arg_i) {
+                final int o_role1 = tmp_o_graph1[arg_i];
+                final int role1 = tmp_graph1[arg_i];
+                if (role1 < 0) break;
                 final int[][][] tmp_features2 = tmp_features[arg_i];
                 
                 for (int prd_j=prd_i; prd_j<o_graph.length; ++prd_j) {
-                    final ArrayList<Integer> tmp_o_graph2 = o_graph[prd_j];
-                    final ArrayList<Integer> tmp_graph2 = graph[prd_j];
+                    final int[] tmp_o_graph2 = o_graph[prd_j];
+                    final int[] tmp_graph2 = graph[prd_j];
                     final int[][] tmp_features3 = tmp_features2[prd_j];
 
                     final int p;
                     if (prd_i == prd_j) p = arg_i+1;
                     else p=0;
                     
-                    for (int arg_j=p; arg_j<tmp_o_graph2.size(); ++arg_j) {
-                        final int o_role2 = tmp_o_graph2.get(arg_j);
-                        final int role2 = tmp_graph2.get(arg_j);
+                    for (int arg_j=p; arg_j<tmp_o_graph2.length; ++arg_j) {
+                        final int o_role2 = tmp_o_graph2[arg_j];
+                        final int role2 = tmp_graph2[arg_j];
+                        if (role2 < 0) break;
                         final int[] feature = tmp_features3[arg_j];
                 
                         perceptron.updateWeights(RoleDict.biroledict.get(String.valueOf(o_role1) + "-" + String.valueOf(o_role2)),
                                                  RoleDict.biroledict.get(String.valueOf(role1) + "-" + String.valueOf(role2)),
                                                  feature);
-//                        perceptron.updateWeights(o_role1, o_role2, role1, role2, feature);
                     }
-                }
-                
+                }                
             }
         }
-    }
-    
+    }    
     
 }
