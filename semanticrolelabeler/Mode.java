@@ -68,7 +68,10 @@ final public class Mode {
         if ("train".equals(modeselect)) {
             System.out.println("\nFiles Loaded...");        
             trainsentence = Reader.read(trainfile, false);
-            testsentence = Reader.read(testfile, true);
+            if (ai)
+                testsentence = Reader.read(testfile, true);
+            else
+                testsentence = Reader.read(testfile, true, true);
             evalsentence = Reader.read(evalfile);
             
             System.out.println(String.format(
@@ -77,7 +80,7 @@ final public class Mode {
 
             System.out.println("Framedict: " + FrameDict.framedict.size());
             System.out.println("Roles: " + RoleDict.roledict.size());
-
+            
             if (pd) {
                 System.out.println("\nPredicate Disambiguator Learning START");        
                 PredicateDisambiguator pd = new PredicateDisambiguator(weight_length);
@@ -100,6 +103,7 @@ final public class Mode {
                     System.out.println();                
                     AccuracyChecker checker = new AccuracyChecker();
                     checker.testAI(testsentence, evalsentence, ai);                    
+                    if (i==iteration-1 && output) checker.outputAI(testsentence, outfile);
                 }
             }
             

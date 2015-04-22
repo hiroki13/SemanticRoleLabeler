@@ -146,6 +146,39 @@ final public class AccuracyChecker {
         pw.close();
     }
 
+    final public void outputAI(final ArrayList<Sentence> sentencelist, final String fn) throws IOException {
+        PrintWriter pw = new PrintWriter(new BufferedWriter
+                                        (new FileWriter(fn + "-ai-output.txt")));
+        
+        for (int i=0; i<sentencelist.size(); ++i) {
+            final Sentence sentence = sentencelist.get(i);
+
+            for (int j=1; j<sentence.size(); ++j) {
+                final Token t = sentence.tokens.get(j);
+                String text = "";
+                text += t.id + "\t";
+                text += t.form + "\t";
+                text += t.lemma + "\t";
+                text += t.plemma + "\t";
+                text += t.pos + "\t";
+                text += t.ppos + "\t";
+                text += t.feat + "\t";
+                text += t.pfeat + "\t";
+                text += t.head + "\t";
+                text += t.phead + "\t";
+                text += t.deprel + "\t";
+                text += t.pdeprel + "\t";
+                text += t.fillpred + "\t";
+                text += setPred(t);
+                text += setArgument(sentence, j);
+                pw.println(text);
+            }
+
+            pw.println();
+        }
+        pw.close();
+    }
+
     
     final public String setArgument(final Sentence sentence, final Token t) {
         final int[] preds = sentence.preds;
@@ -192,6 +225,28 @@ final public class AccuracyChecker {
         return text;
     }
     
+    final public String setArgument(final Sentence sentence, final int target_arg_id) {
+        String text = "";
+        final int[] preds = sentence.preds;
+        
+        for (int i=0; i<preds.length; ++i) {
+            final Token pred = sentence.tokens.get(preds[i]);
+            final ArrayList<Integer> arguments = pred.arguments;
+            boolean flag = true;
+            
+            for (int j=0; j<arguments.size(); ++j) {
+                final int arg_id = arguments.get(j);
+                
+                if (target_arg_id == arg_id) {
+                    text += "1\t";
+                    flag = false;
+                    break;
+                }
+            }
+            if (flag) text += "_\t";
+        }
+        return text;
+    }
     
     final public String setPred(final Token t) {
         if (t.pred < 0) return "_\t";

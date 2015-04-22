@@ -32,7 +32,6 @@ final public class Sentence {
 
     final public void setPredicates() {
         ArrayList<Integer> tmp_preds = new ArrayList<>();
-        int k = 0;
         
         for (int i=0; i<tokens.size(); ++i) {
             Token t = tokens.get(i);

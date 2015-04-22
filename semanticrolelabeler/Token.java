@@ -126,8 +126,12 @@ final public class Token {
             }
         }
         else {
-            for (int i=0; i<apred.length; ++i)
-                apred[i] = -1;            
+            for (int i=0; i<apred.length; ++i) {
+                if ("1".equals(line[14+i]))
+                    apred[i] = 1000;
+                else
+                    apred[i] = -1;
+            }
         }
         
         return apred;

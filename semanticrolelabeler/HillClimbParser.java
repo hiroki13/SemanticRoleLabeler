@@ -257,9 +257,7 @@ public class HillClimbParser {
                     final float[][] tmp_scores = scores[prd_i];
 
                     for (int arg_i=0; arg_i<arguments.size(); ++arg_i) {
-//                        final int arg = arguments.get(arg_i);
                         final int prev_role = tmp_prev_graph.get(arg_i);
-//                        final float[] tmp_scores2 = tmp_scores[arg];
                         final float[] tmp_scores2 = tmp_scores[arg_i];
                         final float tmp_overall_score = overall_score - tmp_scores2[prev_role];
                         
@@ -278,8 +276,7 @@ public class HillClimbParser {
                 }
                 
                 graph[best_prd].set(best_arg_i, best_role);
-//                graph = changeGraph(prev_graph, best_prd, best_role, best);
-//                if (isGraphMatch(graph, prev_graph)) break;
+
                 if (best_prd == prev_best_prd && best_arg_i == prev_best_arg_i && best_role == prev_best_role)
                     break;
                 else {
@@ -319,28 +316,30 @@ public class HillClimbParser {
             ArrayList<Integer>[] graph = setInitGraph(sentence, propositions);
 
             while (true) {
-                final ArrayList<Integer>[] prev_graph = copyGraph(graph);
-                final float overall_score = getOverallScore(prev_graph, scores1) + getOverallScore(prev_graph, scores2);
+//                final ArrayList<Integer>[] prev_graph = copyGraph(graph);
+//                final float overall_score = getOverallScore(prev_graph, scores1) + getOverallScore(prev_graph, scores2);
                 
                 for (int prd_i=0; prd_i<prds_length; ++prd_i) {
                     final ArrayList<Integer> proposition = propositions[prd_i];
 
                     final ArrayList<Integer> arguments = tokens.get(preds[prd_i]).arguments;
 
-                    final ArrayList<Integer> tmp_prev_graph = prev_graph[prd_i];
-                    final float[][] tmp_scores = scores1[prd_i];
+//                    final ArrayList<Integer> tmp_prev_graph = prev_graph[prd_i];
+//                    final float[][] tmp_scores = scores1[prd_i];
 
                     for (int arg_i=0; arg_i<arguments.size(); ++arg_i) {
-                        final int prev_role = tmp_prev_graph.get(arg_i);
-                        final float[] tmp_scores2 = tmp_scores[arg_i];
+//                        final int prev_role = tmp_prev_graph.get(arg_i);
+//                        final float[] tmp_scores2 = tmp_scores[arg_i];
                         
-                        final float tmp_overall_score = overall_score
-                                     - tmp_scores2[prev_role]
-                                     - getSecondOrdScores(scores2, propositions, prd_i, arg_i, prev_role);
+//                        final float tmp_overall_score = overall_score
+//                                     - tmp_scores2[prev_role]
+//                                     - getSecondOrdScores(scores2, propositions, prd_i, arg_i, prev_role);
                         
                         for (int role_i=0; role_i<proposition.size(); ++role_i) {
                             final int role = proposition.get(role_i);
-                            float score = tmp_overall_score + tmp_scores2[role] + getSecondOrdScores(scores2, propositions, prd_i, arg_i, role);
+                            final ArrayList<Integer>[] tmp_graph = changeGraph(graph, prd_i, role, arg_i);
+                            final float score = getOverallScore(tmp_graph, scores1) + getOverallScore(tmp_graph, scores2);
+//                            float score = tmp_overall_score + tmp_scores2[role] + getSecondOrdScores(scores2, propositions, prd_i, arg_i, role);
                             
                             if (score > best_score) {
                                 best_score = score;

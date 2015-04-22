@@ -59,6 +59,45 @@ final public class Reader {
         return sentenceList;
     }
 
+    final public static ArrayList<Sentence> read(final String fn, final boolean ai, final boolean test) throws Exception{
+        int i = 0;
+        final String delimiter = "\t";
+        final String[] root ={"0","_ROOT_","_ROOT_","_ROOT_","ROOT","ROOT",
+                              "_","_","-1","-1","PAD","PAD","_","_"};
+        String line;
+        ArrayList<Sentence> sentenceList = new ArrayList<>();
+        Sentence sentence = new Sentence(i++);
+        sentence.add(new Token(root, test));
+
+        try(BufferedReader br = new BufferedReader(
+                                new InputStreamReader(
+                                new FileInputStream(fn)))){
+            while((line=br.readLine()) != null){
+                
+                if (line.isEmpty()) {
+                    sentence.setPredicates();
+                    sentence.setChildren();
+                    sentence.setSubCat();
+                    sentence.setChildDepSet();                    
+                    sentence.setDeps();
+
+                    sentence.setArguments();                        
+                    sentence.setFrameDict();
+                    
+                    sentenceList.add(sentence);
+                    sentence = new Sentence(i++);
+                    sentence.add(new Token(root, test));
+                }
+                else {               
+                    String[] split = line.split(delimiter);
+                    sentence.add(new Token(split, test));
+                }
+            }
+        }
+        
+        return sentenceList;
+    }
+    
     final public static ArrayList<Sentence> read(final String fn) throws Exception{
         int i = 0;
         final String delimiter = "\t";
