@@ -16,6 +16,7 @@ public class BaseParser {
     public FeatureExtracter feature_extracter;
     public float correct, total, r_total, p_total;
     public long time;
+    public int prune = -1;
     
     public BaseParser(final int label_length, final int weight_length) {
         this.perceptron = new MultiClassPerceptron(label_length, weight_length);
@@ -54,6 +55,8 @@ public class BaseParser {
             }
 
             if (i%1000 == 0 && i != 0) System.out.print(String.format("%d ", i));
+            if (i==-1) break;
+            
             
         }
         

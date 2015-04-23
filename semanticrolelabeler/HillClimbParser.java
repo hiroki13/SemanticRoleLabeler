@@ -19,7 +19,7 @@ public class HillClimbParser {
     public Random rnd;
     public float correct, total, p_total, r_total;
     public long time;
-    public int restart;
+    public int restart, prune = -1;
 
     public HillClimbParser(final int weight_length, final int restart) {
 //        this.perceptron = new MultiClassPerceptron(RoleDict.size(), weight_length);
@@ -74,7 +74,8 @@ public class HillClimbParser {
 
             final int[][][] features = createFeatures(sentence);
             final int[][][][][] features2 = createSecondFeatures(sentence);
-            final int[][] best_graph = decodeSecond(sentence, features, features2);
+//            final int[][] best_graph = decodeSecond(sentence, features, features2);
+            final int[][] best_graph = decodePerPred(sentence, features, features2);
             
             updateWeights(sentence.o_graph, best_graph, features);
             updateWeights(sentence.o_graph, best_graph, features2);
@@ -85,6 +86,8 @@ public class HillClimbParser {
             if (i%100 == 0 && i != 0) {
                 System.out.print(String.format("%d ", i));
             }
+            
+            if (i==prune) break;
             
         }
         
@@ -132,7 +135,8 @@ public class HillClimbParser {
             long time1 = System.currentTimeMillis();
             final int[][][] features = createFeatures(sentence);
             final int[][][][][] features2 = createSecondFeatures(sentence);
-            sentence.p_graph = decodeSecond(sentence, features, features2);
+//            sentence.p_graph = decodeSecond(sentence, features, features2);
+            sentence.p_graph = decodePerPred(sentence, features, features2);
             long time2 = System.currentTimeMillis();
 
             time += time2 - time1;
@@ -353,6 +357,72 @@ public class HillClimbParser {
         return best_graph;
     }
 
+    final public int[][] decodePerPred(final Sentence sentence,
+                                         final int[][][] features,
+                                         final int[][][][][] features2) {
+        final ArrayList<Token> tokens = sentence.tokens;
+        final int[] preds = sentence.preds;
+        final int prds_length = sentence.preds.length;
+        final int max_arg_length = sentence.max_arg_length;
+        final ArrayList<Integer>[] propositions = setPropositions2(sentence);
+        final float[][][] scores1 = getScores(sentence, propositions, features);
+        final float[][][][][][] scores2 = getScores(sentence, propositions, features2);
+        final ArrayList<Integer> proposition = RoleDict.rolearray;
+        final int prop_length = proposition.size();
+
+        float prev_best_score = -10000000000.0f;
+        int[][] best_graph = new int[prds_length][max_arg_length];
+
+        for (int i=0; i<restart; ++i) {
+            int[][] graph = setInitGraph(sentence, propositions);
+            float all_score = 0.0f;
+
+            for (int prd_i=0; prd_i<prds_length; ++prd_i) {
+                final ArrayList<Integer> arguments = tokens.get(preds[prd_i]).arguments;
+                final int arg_length = arguments.size();
+                if (arg_length == 0) continue;
+                int best_arg_i = -1, best_role = -1;
+                int prev_best_arg_i = -1, prev_best_role = -1;
+                float best_score = -10000000000.0f;
+                    
+                while (true) {
+                    best_score = -10000000000.0f;
+
+                    for (int arg_i=0; arg_i<arg_length; ++arg_i) {
+                        for (int role_i=0; role_i<prop_length; ++role_i) {
+                            final int role = proposition.get(role_i);
+                            final int[][] tmp_graph = changeGraph(graph, prd_i, role, arg_i);
+                            final float score = getPredGraphScore(prd_i, tmp_graph, scores1) + getPredGraphScore(tmp_graph, scores2);
+                            
+                            if (score > best_score) {
+                                best_score = score;
+                                best_role = role;
+                                best_arg_i = arg_i;
+                            }
+                        }                      
+                    }
+                        
+                    graph[prd_i][best_arg_i] = best_role;
+                    if (best_arg_i == prev_best_arg_i && best_role == prev_best_role)
+                        break;
+                    else {
+                        prev_best_arg_i = best_arg_i;
+                        prev_best_role = best_role;
+                    }
+                }
+                    
+                all_score += best_score;
+            }
+
+            if (all_score > prev_best_score) {
+                best_graph = copyGraph(graph);
+                prev_best_score = all_score;                
+            }            
+        }
+        
+        return best_graph;
+    }
+
     
     final private ArrayList<Integer>[] setPropositions(final Sentence sentence) {
         final ArrayList<Integer>[] preds = new ArrayList[sentence.preds.length];
@@ -485,7 +555,6 @@ public class HillClimbParser {
     final private float[][][][][][] getScores(final Sentence sentence,
                                                final ArrayList<Integer>[] propositions,
                                                final int[][][][][] features2) {
-//        final float[][][][][][] scores = new float[sentence.preds.length][sentence.size()][RoleDict.size()][sentence.preds.length][sentence.size()][RoleDict.size()];
         final float[][][][][][] scores = new float[sentence.preds.length][sentence.max_arg_length][RoleDict.size()][sentence.preds.length][sentence.max_arg_length][RoleDict.size()];
         
         for (int prd_i=0; prd_i<sentence.preds.length; ++prd_i) {
@@ -493,6 +562,9 @@ public class HillClimbParser {
             final int[][][][] tmp_features = features2[prd_i];
 
             final Token pred = sentence.tokens.get(sentence.preds[prd_i]);
+            
+//            if (!pred.ppos.startsWith("V")) continue;
+            
             final ArrayList<Integer> arguments1 = pred.arguments;
             final ArrayList<Integer> proposition1 = propositions[prd_i];
             
@@ -509,6 +581,9 @@ public class HillClimbParser {
                         final int[][] tmp_features3 = tmp_features2[prd_j];
     
                         final Token pred2 = sentence.tokens.get(sentence.preds[prd_j]);                    
+
+//                        if (!pred2.ppos.startsWith("V")) continue;
+
                         final ArrayList<Integer> arguments2 = pred2.arguments;                    
                         final ArrayList<Integer> proposition2 = propositions[prd_j];
 
@@ -536,6 +611,24 @@ public class HillClimbParser {
     }
     
 
+    final private float getPredGraphScore(final int prd_i,
+                                            final int[][] graph,
+                                            final float[][][] scores) {
+        float score = 0.0f;
+        
+        final int[] tmp_graph = graph[prd_i];
+        final float[][] tmp_scores = scores[prd_i];
+            
+        for (int arg_i=0; arg_i<tmp_graph.length; ++arg_i) {
+            final int role = tmp_graph[arg_i];
+            if (role < 0) break;
+            score += tmp_scores[arg_i][role];
+        }
+        
+        return score;
+    }
+
+    
     final private float getOverallScore(final int[][] graph,
                                           final float[][][] scores) {
         float score = 0.0f;
@@ -587,8 +680,33 @@ public class HillClimbParser {
         
         return score;
     }
+
+    final private float getPredGraphScore(final int[][] graph,
+                                            final float[][][][][][] scores) {
+        float score = 0.0f;
+        
+        for (int prd_i=0; prd_i<graph.length; ++prd_i) {
+            final int[] tmp_graph = graph[prd_i];
+            final float[][][][][] tmp_scores = scores[prd_i];
+            
+            for (int arg_i=0; arg_i<tmp_graph.length; ++arg_i) {
+                final int role1 = tmp_graph[arg_i];
+                if (role1 < 0) break;
+                final float[][][] tmp_scores2 = tmp_scores[arg_i][role1];
+                            
+                for (int arg_j=arg_i+1; arg_j<tmp_graph.length; ++arg_j) {                
+                    final int role2 = tmp_graph[arg_j];                    
+                    if (role2 < 0) break;                    
+                    score += tmp_scores2[prd_i][arg_j][role2];                    
+                }                
+            }
+        }
+        
+        return score;
+    }
     
     
+/*    
     final private float getSecondOrdScores(final float[][][][][][] scores,
                                              final ArrayList<Integer>[] propositions,
                                              final int prd_i, final int arg_i,
@@ -630,7 +748,7 @@ public class HillClimbParser {
         
         return score;
     }
-    
+*/    
     
     final private float getHammingDistance(final HashMap<String, Integer>[] o_graph,
                                              final HashMap<String, Integer>[] graph) {

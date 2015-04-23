@@ -227,7 +227,7 @@ final public class FeatureExtracter implements Serializable{
                                                          final int arg_i,
                                                          final int arg_j) {
         k = 0;
-        String[] feature = new String[18];
+        String[] feature = new String[4];
 
         final ArrayList<Token> tokens = sentence.tokens;        
         final Token prd1 = tokens.get(sentence.preds[prd_i]);
@@ -235,50 +235,52 @@ final public class FeatureExtracter implements Serializable{
         final Token arg1 = tokens.get(prd1.arguments.get(arg_i));
         final Token arg2 = tokens.get(prd2.arguments.get(arg_j));
 
-        final String p_posit = position(prd1.id, prd2.id);
-        final String p1p2a1_posit = position(prd1.id, prd2.id, arg1.id);
-        final String p1p2a2_posit = position(prd1.id, prd2.id, arg2.id);
-        final String p1a1_posit = position(prd1.id, arg1.id);
-        final String p1a2_posit = position(prd1.id, arg2.id);
-        final String p2a1_posit = position(prd2.id, arg1.id);
-        final String p2a2_posit = position(prd2.id, arg2.id);
+        final String pos = pos(prd1) + pos(prd2);        
+//        final String p_posit = dist(prd1.id, prd2.id);
+//        final String p1p2a1_posit = position(prd1.id, prd2.id, arg1.id);
+//        final String p1p2a2_posit = position(prd1.id, prd2.id, arg2.id);
+//        final String p1a1_posit = dist(prd1.id, arg1.id);
+//        final String p1a2_posit = dist(prd1.id, arg2.id);
+//        final String p2a1_posit = dist(prd2.id, arg1.id);
+//        final String p2a2_posit = dist(prd2.id, arg2.id);
 
-        final String[][] deprel_path = sentence.dep_r_path;
-        final String p1a1_dpath = deprel_path[prd_i][arg1.id];        
-        final String p2a1_dpath = deprel_path[prd_j][arg1.id];        
-        final String p1a2_dpath = deprel_path[prd_i][arg2.id];        
-        final String p2a2_dpath = deprel_path[prd_j][arg2.id];        
-        final String p1p2_dpath = deprel_path[prd_i][prd2.id];        
+//        final String[][] dpath = sentence.dep_path;
+//        final String pdpath = dpath[prd_i][prd2.id];        
+//        final String[][] deprel_path = sentence.dep_r_path;
+//        final String p1a1_dpath = deprel_path[prd_i][arg1.id];        
+//        final String p2a1_dpath = deprel_path[prd_j][arg1.id];        
+//        final String p1a2_dpath = deprel_path[prd_i][arg2.id];        
+//        final String p2a2_dpath = deprel_path[prd_j][arg2.id];        
+//        final String p1p2_dpath = deprel_path[prd_i][prd2.id];        
         
         
-        final String pw1 = feature_i[0];
-        final String pw2 = feature_j[0];
-        final String aw1 = feature_i[9];
-        final String aw2 = feature_j[9];
-        final String ad1 = feature_i[11];
-        final String ad2 = feature_j[11];
+        final String pw1 = prd1.form;
+        final String pw2 = prd2.form;
+        final String aw1 = arg1.form;
+        final String aw2 = arg2.form;
+//        final String ad1 = arg1.pdeprel;
+///        final String ad2 = arg2.pdeprel;
 
-        feature[k++] = "BiPredWord" + pw1 + pw2 + p_posit;
-        feature[k++] = "BiPredWord+DeprelPath" + pw1 + pw2 + p1p2_dpath;
-        feature[k++] = "BiArgWord" + aw1 + aw2 + p1p2a1_posit + p1p2a2_posit;
-        feature[k++] = "BiArgDeprel" + ad1 + ad2 + p1p2a1_posit + p1p2a2_posit;
+//        feature[k++] = "BiPredWord" + pw1 + pw2;
+        feature[k++] = "BiArgWord" + aw1 + aw2;
+//        feature[k++] = "BiArgDeprel" + ad1 + ad2;
 
-        feature[k++] = "UniPredWord+BiArgWord1" + pw1 + aw1 + aw2 + p1a1_posit + p1a2_posit;
-        feature[k++] = "UniPredWord+BiArgWord2" + pw2 + aw1 + aw2 + p2a1_posit + p2a2_posit;
-        feature[k++] = "UniPredWord+BiArgDeprel1" + pw1 + ad1 + ad2 + p1a1_posit + p1a2_posit;
-        feature[k++] = "UniPredWord+BiArgDeprel2" + pw2 + ad1 + ad2 + p2a1_posit + p2a2_posit;
-        feature[k++] = "UniPredWord+BiArgWord1+DeprelPath" + pw1 + aw1 + aw2 + p1a1_dpath + p1a2_dpath;
-        feature[k++] = "UniPredWord+BiArgWord2+DeprelPath" + pw2 + aw1 + aw2 + p2a1_dpath + p2a2_dpath;
+        feature[k++] = "UniPredWord+BiArgWord1" + pw1 + aw1 + aw2;
+//        feature[k++] = "UniPredWord+BiArgWord2" + pw2 + aw1 + aw2;
+//        feature[k++] = "UniPredWord+BiArgDeprel1" + pw1 + ad1 + ad2;
+//        feature[k++] = "UniPredWord+BiArgDeprel2" + pw2 + ad1 + ad2;
 
-        feature[k++] = "BiPredWord+UniArgWord1" + pw1 + pw2 + aw1 + p_posit + p1p2a1_posit;
-        feature[k++] = "BiPredWord+UniArgWord2" + pw1 + pw2 + aw2 + p_posit + p1p2a2_posit;
-        feature[k++] = "BiPredWord+UniArgDeprel1" + pw1 + pw2 + ad1 + p_posit + p1p2a1_posit;
-        feature[k++] = "BiPredWord+UniArgDeprel2" + pw1 + pw2 + ad2 + p_posit + p1p2a2_posit;
-        feature[k++] = "BiPredWord+UniArgWord1+DeprelPath" + pw1 + pw2 + aw1 + p1a1_dpath + p2a1_dpath;
-        feature[k++] = "BiPredWord+UniArgWord2+DeprelPath" + pw1 + pw2 + aw2 + p1a2_dpath + p2a2_dpath;
+        feature[k++] = "BiPredWord+UniArgWord1" + pw1 + aw1;
+        feature[k++] = "BiPredWord+UniArgWord2" + pw1 + aw2;
+//        feature[k++] = "BiPredWord+UniArgWord1" + pw1 + pw2 + aw1;
+//        feature[k++] = "BiPredWord+UniArgWord2" + pw1 + pw2 + aw2;
+//        feature[k++] = "BiPredWord+UniArgDeprel1" + pw1 + pw2 + ad1 + p_posit;
+//        feature[k++] = "BiPredWord+UniArgDeprel2" + pw1 + pw2 + ad2 + p_posit;
         
-        feature[k++] = "BiPredWord+BiArgWord2" + pw1 + pw2 + aw1 + aw2 + p_posit + p1p2a1_posit + p1p2a2_posit;
-        feature[k++] = "BiPredWord+BiArgWord2+DeprelPath" + pw1 + pw2 + aw1 + aw2 + p1p2_dpath + p1a1_dpath + p2a2_dpath;
+//        feature[k++] = "BiPredWord+BiArgWord2" + pw1 + pw2 + aw1 + aw2 + p_posit;
+
+//        feature = conjoin(feature, pdpath, pos);
+        feature = conjoin(feature, pos);
         
         return feature;
     }
@@ -459,6 +461,22 @@ final public class FeatureExtracter implements Serializable{
         else return "On";
     }
 
+    final private String dist(final int prd, final int arg) {
+        int dist = prd - arg;
+        
+        if (dist > 5) return "A";
+        else if (dist == 4) return "B";
+        else if (dist == 3) return "C";
+        else if (dist == 2) return "D";
+        else if (dist == 1) return "E";
+        else if (dist == 0) return "F";
+        else if (dist == -4) return "G";
+        else if (dist == -3) return "H";
+        else if (dist == -2) return "I";
+        else if (dist == -1) return "J";
+        else return "K";
+    }
+    
     final private String position(final int prd1_id, final int prd2_id,
                                    final int arg_id) {
         return position(prd1_id, arg_id) + position(prd2_id, arg_id);
@@ -484,7 +502,7 @@ final public class FeatureExtracter implements Serializable{
             new_feature[i] = feature[i] + role + pos;
         return new_feature;
     }
-
+/*
     final public String[] conjoin2(final String[] feature, final String role,
                                     final String pos) {
         final String[] new_feature = new String[k];
@@ -492,5 +510,5 @@ final public class FeatureExtracter implements Serializable{
             new_feature[i] = feature[i] + role + pos;
         return new_feature;
     }
-    
+*/    
 }

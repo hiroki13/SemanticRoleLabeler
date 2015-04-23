@@ -17,14 +17,19 @@ public class RoleDict {
     static public ArrayList<String> roledict = new ArrayList();
     static public ArrayList<Integer> rolearray = new ArrayList();
     static public HashMap<String, Integer> biroledict = new HashMap();
+    static public boolean core;
     
     final static public void add(String role) {
+        if (core && (role.startsWith("C") || role.startsWith("R"))) return;
+
         if (roledict.contains(role)) return;
         roledict.add(role);
         rolearray.add(roledict.indexOf(role));
     }
 
     final static public int addAndGet(String role) {
+        if (core && (role.startsWith("C") || role.startsWith("R"))) role = "NULL";
+
         if (!roledict.contains(role)) {
             roledict.add(role);
             rolearray.add(roledict.indexOf(role));

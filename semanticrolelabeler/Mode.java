@@ -18,8 +18,8 @@ final public class Mode {
     final OptionParser optionparser;
     String modeselect, parserselect;    
     String trainfile, testfile, evalfile, outfile, modelfile, framefile;
-    boolean train, test, eval, output, model, frame, check_accuracy, pd, ai, ac;
-    int iteration, restart, weight_length;
+    boolean train, test, eval, output, model, frame, check_accuracy, pd, ai, ac, core;
+    int iteration, restart, weight_length, prune;
     ArrayList<Sentence> trainsentence, testsentence, evalsentence;
     
     
@@ -52,10 +52,12 @@ final public class Mode {
         output = optionparser.isExsist("output");
         model = optionparser.isExsist("model");
         frame = optionparser.isExsist("frame");
+        core = optionparser.isExsist("core");
         check_accuracy = optionparser.isExsist("check");
         weight_length = optionparser.getInt("weight", 1000);
         iteration = optionparser.getInt("iter", 10);
         restart = optionparser.getInt("restart", 1);
+        prune = optionparser.getInt("prune", 100000);
     }    
     
     final public void execute() throws Exception{
@@ -66,7 +68,12 @@ final public class Mode {
         System.out.println("PARSER: " + parserselect);        
 
         if ("train".equals(modeselect)) {
-            System.out.println("\nFiles Loaded...");        
+            System.out.println("\nFiles Loaded...");
+            
+            RoleDict.core = core;
+            if (core)
+                RoleDict.add("NULL");
+            
             trainsentence = Reader.read(trainfile, false);
             if (ai)
                 testsentence = Reader.read(testfile, true);
@@ -92,6 +99,8 @@ final public class Mode {
             System.out.println("Framedict: " + FrameDict.framedict.size());
             System.out.println("Roles: " + RoleDict.roledict.size());
             System.out.println("BiRoles: " + RoleDict.biroledict.size());
+            
+            ArrayList<String> a = RoleDict.roledict;
             
             if (pd) {
                 System.out.println("\nPredicate Disambiguator Learning START");        
@@ -127,6 +136,9 @@ final public class Mode {
                 trainer = new Trainer(trainsentence, weight_length, restart);
             else
                 trainer = new Trainer(trainsentence, weight_length);
+            
+            if ("hill".equals(parserselect)) trainer.hillparser.prune = prune;
+            else trainer.baseparser.prune = prune;
             
             for (int i=0; i<iteration; ++i) {
                 System.out.println("\nIteration: " + (i+1));
