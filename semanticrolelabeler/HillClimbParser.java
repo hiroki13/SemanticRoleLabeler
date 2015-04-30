@@ -74,12 +74,12 @@ public class HillClimbParser {
 
             final int[][][] features = createFeatures(sentence);
             final int[][][][][] features2 = createSecondFeatures(sentence);
-//            final int[][] best_graph = decodeSecond(sentence, features, features2);
-            final int[][] best_graph = decodePerPred(sentence, features, features2);
+            final int[][] best_graph = decodeSecond(sentence, features, features2);
+//            final int[][] best_graph = decodePerPred(sentence, features, features2);
             
             updateWeights(sentence.o_graph, best_graph, features);
             updateWeights(sentence.o_graph, best_graph, features2);
-            perceptron.t -= 1.0;
+//            perceptron.t -= 1.0;
 
             checkAccuracy(sentence.o_graph, best_graph);
 
@@ -135,8 +135,8 @@ public class HillClimbParser {
             long time1 = System.currentTimeMillis();
             final int[][][] features = createFeatures(sentence);
             final int[][][][][] features2 = createSecondFeatures(sentence);
-//            sentence.p_graph = decodeSecond(sentence, features, features2);
-            sentence.p_graph = decodePerPred(sentence, features, features2);
+            sentence.p_graph = decodeSecond(sentence, features, features2);
+//            sentence.p_graph = decodePerPred(sentence, features, features2);
             long time2 = System.currentTimeMillis();
 
             time += time2 - time1;
@@ -571,6 +571,7 @@ public class HillClimbParser {
             for (int arg_i=0; arg_i<arguments1.size(); ++arg_i) {
                 final float[][][][] tmp_scores2 = tmp_scores[arg_i];
                 final int[][][] tmp_features2 = tmp_features[arg_i];
+                final int arg_id1 = arguments1.get(arg_i);
 
                 for (int role_i=0; role_i<proposition1.size(); ++role_i) {                
                     final int role1 = proposition1.get(role_i);                    
@@ -592,6 +593,8 @@ public class HillClimbParser {
                         else p=0;
                                         
                         for (int arg_j=p; arg_j<arguments2.size(); ++arg_j) {
+                            final int arg_id2 = arguments2.get(arg_j);
+                            if (arg_id1 != arg_id2) continue;
                             final float[] tmp_scores5 = tmp_scores4[arg_j];
                             final int[] tmp_features4 = tmp_features3[arg_j];
                 
@@ -863,7 +866,7 @@ public class HillClimbParser {
                 final int[] feature = tmp_features[j];
                 perceptron.updateWeights(RoleDict.biroledict.get(String.valueOf(o_role)),
                                          RoleDict.biroledict.get(String.valueOf(role)),
-                                         feature);
+                                         feature, false);
             }
         }
     }
@@ -899,7 +902,7 @@ public class HillClimbParser {
                 
                         perceptron.updateWeights(RoleDict.biroledict.get(String.valueOf(o_role1) + "-" + String.valueOf(o_role2)),
                                                  RoleDict.biroledict.get(String.valueOf(role1) + "-" + String.valueOf(role2)),
-                                                 feature);
+                                                 feature, true);
                     }
                 }                
             }

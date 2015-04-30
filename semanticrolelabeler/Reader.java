@@ -118,6 +118,7 @@ final public class Reader {
                 if (line.isEmpty()) {
                     sentence.setPredicates();
                     sentence.setArguments();
+                    sentence.setChildren();
                     sentence.setMaxArgLength();
                     sentence.setFrameDict();
                     sentence.setOracleGraph();

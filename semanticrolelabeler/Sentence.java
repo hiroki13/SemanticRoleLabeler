@@ -49,20 +49,20 @@ final public class Sentence {
     }
     
     final void setChildren() {
-        for (int i=0; i<this.size(); ++i) {
+        for (int i=0; i<size(); ++i) {
             Token token = tokens.get(i);
 
-            for (int j=0; j<this.size(); ++j) {
+            for (int j=0; j<size(); ++j) {
                 if (i == j) continue;
                 
-                Token child = tokens.get(i);
+                Token child = tokens.get(j);
                 
                 if (child.phead == token.id)
                     token.children.add(child.id);
             }    
         }
         
-        for (int i=0; i<this.size(); ++i) {
+        for (int i=0; i<size(); ++i) {
             final Token token = tokens.get(i);
             final ArrayList<Integer> children = token.children;
 
@@ -75,7 +75,7 @@ final public class Sentence {
                 
                 if (child_id < leftmost)
                     leftmost = child_id;
-                else if (child_id > rightmost)
+                if (child_id > rightmost)
                     rightmost = child_id;
             }
             

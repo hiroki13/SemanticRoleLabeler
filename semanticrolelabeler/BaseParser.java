@@ -55,7 +55,7 @@ public class BaseParser {
             }
 
             if (i%1000 == 0 && i != 0) System.out.print(String.format("%d ", i));
-            if (i==-1) break;
+            if (i==prune) break;
             
             
         }
@@ -109,6 +109,9 @@ public class BaseParser {
         correct = 0.0f;
         p_total = 0.0f;
         r_total = 0.0f;
+        float c_correct = 0.0f;
+        float cp_total = 0.0f;
+        float cr_total = 0.0f;
 
         for (int i=0; i<evalsentencelist.size(); i++){
             final Sentence evalsentence = evalsentencelist.get(i);
@@ -122,6 +125,16 @@ public class BaseParser {
                 final ArrayList<Integer> arguments = o_pred.arguments;
                 r_total += arguments.size();
 
+                for (int j=0; j<arguments.size(); ++j) {
+                    final Token a = evalsentence.tokens.get(arguments.get(j));
+
+                    for (int k=0; k<a.children.size(); ++k) {                    
+                        final Token child = evalsentence.tokens.get(a.children.get(k));                        
+                        if ("COORD".equals(child.deprel))                        
+                            cr_total += 1.0;                        
+                    }
+                }
+
                 for (int arg_i=0; arg_i<arguments.size(); ++arg_i) {
                     final Token o_arg = evalsentence.tokens.get(arguments.get(arg_i));
                     final Token arg = getArg(testsentence, prd_i, o_arg);
@@ -132,9 +145,28 @@ public class BaseParser {
                         label = arg.apred[prd_i];
                     }
                     else label = -1;
+
+
+                    if (arg == null) continue;
                     
-                    if (label > -1 && o_label == label)
+                    if (label > -1 && o_label == label) {
                         correct += 1.0;
+                        
+                        for (int j=0; j<arg.children.size(); ++j) {
+                            final Token child = evalsentence.tokens.get(arg.children.get(j));
+                            if ("COORD".equals(child.deprel)) {
+                                c_correct += 1.0;
+                                cp_total += 1.0;
+                            }
+                        }
+                    }
+                    else {                        
+                        for (int j=0; j<arg.children.size(); ++j) {
+                            final Token child = evalsentence.tokens.get(arg.children.get(j));
+                            if ("COORD".equals(child.deprel)) cp_total += 1.0;
+                        }
+                        
+                    }
                 }
 
                 final Token pred = testsentence.tokens.get(preds[prd_i]);
@@ -152,6 +184,15 @@ public class BaseParser {
         System.out.println("\tTest Recall: " + r);
         System.out.println("\tTest F1: " + (2*p*r)/(p+r));
         System.out.println("\tTest Speed: " + time);                
+        
+//        p = c_correct/cp_total;
+//        r = c_correct/cr_total;
+//        System.out.println("\n\tTest COORD Correct: " + c_correct);
+//        System.out.println("\tTest COORD R_Total: " + cr_total);
+//        System.out.println("\tTest COORD P_Total: " + cp_total);
+//        System.out.println("\tTest COORD Precision: " + p);
+//        System.out.println("\tTest COORD Recall: " + r);
+//        System.out.println("\tTest COORD F1: " + (2*p*r)/(p+r));
         
     }
     

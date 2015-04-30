@@ -62,6 +62,21 @@ public class MultiClassPerceptron {
         
         this.t += 1.0f;
     }
+
+    final public void updateWeights(final int o_label, final int p_label,
+                                      final int[] feature, final boolean second){
+        if (second) this.t -= 1.0f;
+        for(int i=0; i<feature.length; ++i){
+            final int phi_id = feature[i];
+            weight[o_label][phi_id] += 1.0f;
+            weight[p_label][phi_id] -= 1.0f;
+            aweight[o_label][phi_id] += this.t;
+            aweight[p_label][phi_id] -= this.t;
+        }
+        
+        this.t += 1.0f;
+    }
+    
 /*
     final public void updateWeights(final int o_label1, final int o_label2,
                                       final int p_label1, final int p_label2,
