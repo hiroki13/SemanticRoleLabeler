@@ -74,6 +74,40 @@ public class HillClimbParser {
 
             final int[][][] features = createFeatures(sentence);
             final int[][][][][] features2 = createSecondFeatures(sentence);
+//            final int[][] best_graph = decodeSecond(sentence, features, features2);
+            final int[][] best_graph = decodePerPred(sentence, features, features2);
+            
+            updateWeights(sentence.o_graph, best_graph, features);
+            updateWeights(sentence.o_graph, best_graph, features2);
+//            perceptron.t -= 1.0;
+
+            checkAccuracy(sentence.o_graph, best_graph);
+
+            if (i%100 == 0 && i != 0) {
+                System.out.print(String.format("%d ", i));
+            }
+            
+            if (i==prune) break;
+            
+        }
+        
+        System.out.println("\n\tCorrect: " + correct);                        
+        System.out.println("\tTotal: " + total);                        
+        System.out.println("\tAccuracy: " + correct/total);
+    }
+
+    final public void trainNN(final ArrayList<Sentence> sentencelist) {
+        correct = 0.0f;
+        total = 0.0f;
+
+        for (int i=0; i<sentencelist.size(); ++i) {
+            final Sentence sentence = sentencelist.get(i);
+                        
+            if (sentence.preds.length == 0) continue;
+            if (checkArguments(sentence)) continue;
+
+            final int[][][] features = createFeatures(sentence);
+            final int[][][][][] features2 = createSecondFeatures(sentence);
             final int[][] best_graph = decodeSecond(sentence, features, features2);
 //            final int[][] best_graph = decodePerPred(sentence, features, features2);
             
@@ -135,8 +169,8 @@ public class HillClimbParser {
             long time1 = System.currentTimeMillis();
             final int[][][] features = createFeatures(sentence);
             final int[][][][][] features2 = createSecondFeatures(sentence);
-            sentence.p_graph = decodeSecond(sentence, features, features2);
-//            sentence.p_graph = decodePerPred(sentence, features, features2);
+//            sentence.p_graph = decodeSecond(sentence, features, features2);
+            sentence.p_graph = decodePerPred(sentence, features, features2);
             long time2 = System.currentTimeMillis();
 
             time += time2 - time1;
@@ -720,6 +754,9 @@ public class HillClimbParser {
         return score;
     }
     
+    final private float getPASScore(final int[] graph) {
+        
+    }
     
 /*    
     final private float getSecondOrdScores(final float[][][][][][] scores,
