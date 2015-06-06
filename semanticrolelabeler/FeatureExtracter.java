@@ -227,16 +227,17 @@ final public class FeatureExtracter implements Serializable{
                                                          final int arg_i,
                                                          final int arg_j) {
         k = 0;
-        String[] feature = new String[4];
+        String[] feature = new String[13];
 
         final ArrayList<Token> tokens = sentence.tokens;        
         final Token prd1 = tokens.get(sentence.preds[prd_i]);
         final Token prd2 = tokens.get(sentence.preds[prd_j]);
         final Token arg1 = tokens.get(prd1.arguments.get(arg_i));
-//        final Token arg2 = tokens.get(prd2.arguments.get(arg_j));
+        final Token arg2 = tokens.get(prd2.arguments.get(arg_j));
 
         final String pos = pos(prd1) + pos(prd2);        
-//        final String p_posit = dist(prd1.id, prd2.id);
+        final String p_posit = position(prd1.id, prd2.id);
+        final String a_posit = position(arg1.id, arg2.id);
 //        final String p1p2a1_posit = position(prd1.id, prd2.id, arg1.id);
 //        final String p1p2a2_posit = position(prd1.id, prd2.id, arg2.id);
 //        final String p1a1_posit = dist(prd1.id, arg1.id);
@@ -246,48 +247,60 @@ final public class FeatureExtracter implements Serializable{
 
 //        final String[][] dpath = sentence.dep_path;
 //        final String pdpath = dpath[prd_i][prd2.id];        
-        final String[][] deprel_path = sentence.dep_r_path;
+//        final String[][] deprel_path = sentence.dep_r_path;
 //        final String p1a1_dpath = deprel_path[prd_i][arg1.id];        
 //        final String p2a1_dpath = deprel_path[prd_j][arg1.id];        
 //        final String p1a2_dpath = deprel_path[prd_i][arg2.id];        
 //        final String p2a2_dpath = deprel_path[prd_j][arg2.id];        
-        final String p1p2_dpath = deprel_path[prd_i][prd2.id];        
+//        final String p1p2_dpath = deprel_path[prd_i][prd2.id];        
         
         
         final String pw1 = prd1.form;
         final String pw2 = prd2.form;
         final String aw1 = arg1.form;
-//        final String aw2 = arg2.form;
+        final String aw2 = arg2.form;
 //        final String ad1 = arg1.pdeprel;
 //        final String ad2 = arg2.pdeprel;
 
         feature[k++] = "BiPredWord" + pw1 + pw2;
-//        feature[k++] = "BiArgWord" + aw1 + aw2;
+        feature[k++] = "BiPredPOS" + prd1.ppos + prd2.ppos;
+        feature[k++] = "BiArgWord" + aw1 + aw2;
 //        feature[k++] = "PredWord1" + pw1;
 //        feature[k++] = "PredWord2" + pw2;
 //        feature[k++] = "ArgWord1" + aw1;
 //        feature[k++] = "ArgWord2" + aw2;
 //        feature[k++] = "BiArgDeprel" + ad1 + ad2;
 
-//        feature[k++] = "UniPredWord+BiArgWord1" + pw1 + aw1 + aw2;
-//        feature[k++] = "UniPredWord+BiArgWord2" + pw2 + aw1 + aw2;
+        feature[k++] = "UniPredWord+BiArgWord1" + pw1 + aw1 + aw2;
+        feature[k++] = "UniPredWord+BiArgWord2" + pw2 + aw1 + aw2;
 //        feature[k++] = "UniPredWord+BiArgDeprel1" + pw1 + ad1 + ad2;
 //        feature[k++] = "UniPredWord+BiArgDeprel2" + pw2 + ad1 + ad2;
 
-        feature[k++] = "UniPredWord+UniArgWord1" + pw1 + aw1;
-//        feature[k++] = "UniPredWord+UniArgWord2" + pw2 + aw2;
-        feature[k++] = "UniPredWord+UniArgWord2" + pw2 + aw1;
-        feature[k++] = "BiPredWord+UniArgWord1" + pw1 + pw2 + aw1;
+//        feature[k++] = "UniPredPOS+UniArgWord1" + prd1.ppos + aw1;
+//        feature[k++] = "UniPredPOS+UniArgWord2" + prd2.ppos + aw1;
+//        feature[k++] = "UniPredPOS+UniArgWord3" + prd1.ppos + aw2;
+//        feature[k++] = "UniPredPOS+UniArgWord4" + prd2.ppos + aw2;
+
+        feature[k++] = "UniPredPOS+UniArgPOS1" + prd1.ppos + arg1.ppos;
+        feature[k++] = "UniPredPOS+UniArgPOS2" + prd2.ppos + arg1.ppos;
+        feature[k++] = "UniPredPOS+UniArgPOS3" + prd1.ppos + arg2.ppos;
+        feature[k++] = "UniPredPOS+UniArgPOS4" + prd2.ppos + arg2.ppos;
 //        feature[k++] = "BiPredWord+UniArgWord2" + pw1 + pw2 + aw2;
 //        feature[k++] = "BiPredWord+UniArgDeprel1" + pw1 + pw2 + ad1;
 //        feature[k++] = "BiPredWord+UniArgDeprel2" + pw1 + pw2 + ad2;
+
+        feature[k++] = "BiPredPOS+UniArgPOS1" + prd1.ppos + prd2.ppos + arg1.ppos;
+        feature[k++] = "BiPredPOS+UniArgPOS2" + prd1.ppos + prd2.ppos + arg2.ppos;
+
+        feature[k++] = "UniPredPOS+BiArgPOS1" + prd1.ppos + arg1.ppos + arg2.ppos;
+        feature[k++] = "UniPredPOS+BiArgPOS2" + prd2.ppos + arg1.ppos + arg2.ppos;
         
 //        feature[k++] = "BiPredWord+BiArgWord2" + pw1 + pw2 + aw1 + aw2 + p_posit;
 //        feature[k++] = "Second_";
 
 //        feature = conjoin(feature, pdpath, pos);
-        feature = conjoin(feature, p1p2_dpath, pos);
-//        feature = conjoin(feature, pos);
+//        feature = conjoin(feature, p1p2_dpath, pos);
+        feature = conjoin(feature, pos, p_posit+a_posit);
         
         return feature;
     }

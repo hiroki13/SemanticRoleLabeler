@@ -21,6 +21,7 @@ public class RoleDict {
     
     final static public void add(String role) {
         if (core && (role.startsWith("C") || role.startsWith("R"))) return;
+        if (core && !"A0".equals(role) && !"A1".equals(role)) return;
 
         if (roledict.contains(role)) return;
         roledict.add(role);
@@ -29,6 +30,7 @@ public class RoleDict {
 
     final static public int addAndGet(String role) {
         if (core && (role.startsWith("C") || role.startsWith("R"))) role = "NULL";
+        if (core && !"A0".equals(role) && !"A1".equals(role)) role = "NULL";
 
         if (!roledict.contains(role)) {
             roledict.add(role);

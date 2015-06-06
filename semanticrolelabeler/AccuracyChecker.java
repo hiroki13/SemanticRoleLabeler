@@ -205,7 +205,10 @@ final public class AccuracyChecker {
                 
                 final int role_id = t_graph[j];
                 final String role = RoleDict.roledict.get(role_id);
-                text += role + "\t";
+                
+                if (!"NULL".equals(role)) text += role + "\t";
+                else text += "_\t";
+                
                 flag = false;
                 break;
             }
@@ -220,8 +223,12 @@ final public class AccuracyChecker {
         for (int i=0; i<t.apred.length; ++i) {
             final int role_id = t.apred[i];
             if (role_id < 0) text += "_\t";
-            else
-                text += RoleDict.roledict.get(role_id) + "\t";
+            else {
+                String role = RoleDict.roledict.get(role_id);
+                
+                if (!"NULL".equals(role)) text += role + "\t";
+                else text += "_\t";
+            }
         }
         return text;
     }

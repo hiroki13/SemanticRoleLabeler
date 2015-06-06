@@ -27,7 +27,7 @@ final public class ParameterChecker {
             setTestFile();
             setEvalFile();
             setOutputFile();
-            setFrameFile();
+//            setFrameFile();
             
             if (!isParser(parserselect)) {
                 System.out.println("Enter -parser base/hill");
@@ -44,6 +44,12 @@ final public class ParameterChecker {
                 System.out.println("Enter -parser base/hill");
                 System.exit(0);
             }
+        }
+
+        else if ("statistics".equals(modeselect)) {
+            setTrainFile();
+            setTestFile();
+            setEvalFile();
         }
 
         else System.out.println("Enter -mode X");        
@@ -86,6 +92,7 @@ final public class ParameterChecker {
         }        
     }
 
+/*    
     final public void setFrameFile() {
         if(mode.frame) mode.framefile = optionparser.getString("frame");
         else {
@@ -93,6 +100,7 @@ final public class ParameterChecker {
             System.exit(0);
         }        
     }    
+*/
     
     final public boolean isParser(String parserselect) {
         String[] possible_parser = {"base","hill"};

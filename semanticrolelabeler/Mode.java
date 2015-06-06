@@ -6,6 +6,7 @@
 package semanticrolelabeler;
 
 import argumentidentifier.ArgumentIdentifier;
+import java.io.IOException;
 import java.util.ArrayList;
 import predicatedisambiguator.PredicateDisambiguator;
 
@@ -51,7 +52,7 @@ final public class Mode {
         eval = optionparser.isExsist("eval");
         output = optionparser.isExsist("output");
         model = optionparser.isExsist("model");
-        frame = optionparser.isExsist("frame");
+//        frame = optionparser.isExsist("frame");
         core = optionparser.isExsist("core");
         check_accuracy = optionparser.isExsist("check");
         weight_length = optionparser.getInt("weight", 1000);
@@ -69,22 +70,17 @@ final public class Mode {
 
         if ("train".equals(modeselect)) {
             System.out.println("\nFiles Loaded...");
-            
+
+//            core = true;
             RoleDict.core = core;
-            if (core)
-                RoleDict.add("NULL");
+            if (core) RoleDict.add("NULL");
             
             trainsentence = Reader.read(trainfile, false);
-            if (ai)
-                testsentence = Reader.read(testfile, true);
-            else
-                testsentence = Reader.read(testfile, true, true);
+            if (ai) testsentence = Reader.read(testfile, true);
+            else testsentence = Reader.read(testfile, true, true);
             evalsentence = Reader.read(evalfile);
             
-            System.out.println(String.format(
-                "Train Sents: %d\nTest Sents: %d",                        
-                trainsentence.size(), testsentence.size()));
-
+            System.out.println(String.format("Train Sents: %d\nTest Sents: %d", trainsentence.size(), testsentence.size()));
             
             for (int i=0; i<RoleDict.rolearray.size(); ++i) {
                 final int role1 = RoleDict.rolearray.get(i);
@@ -102,59 +98,94 @@ final public class Mode {
             
             ArrayList<String> a = RoleDict.roledict;
             
-            if (pd) {
-                System.out.println("\nPredicate Disambiguator Learning START");        
-                PredicateDisambiguator pd = new PredicateDisambiguator(weight_length);
-                for (int i=0; i<iteration; ++i) {
-                    System.out.println("\nIteration: " + (i+1));
-                    pd.train(trainsentence);
-                    System.out.println();                
-                    AccuracyChecker checker = new AccuracyChecker();
-                    checker.testPD(testsentence, evalsentence, pd);                    
-                }
-                weight_length = weight_length * 100;
-            }
-            
-            if (ai) {    
-                System.out.println("\nArgument Identifier Learning START");        
-                ArgumentIdentifier ai = new ArgumentIdentifier(weight_length);
-                for (int i=0; i<iteration; ++i) {
-                    System.out.println("\nIteration: " + (i+1));
-                    ai.train(trainsentence);
-                    System.out.println();                
-                    AccuracyChecker checker = new AccuracyChecker();
-                    checker.testAI(testsentence, evalsentence, ai);                    
-                    if (i==iteration-1 && output) checker.outputAI(testsentence, outfile);
-                }
-            }
-            
-            if (!ac) return;
+            if (pd) predicateDisambiguation();            
+            if (ai) argumentIdentification();            
+            if (ac) argumentClassification();
 
-            System.out.println("\nArgument Classifier Learning START");        
-            final Trainer trainer;
-            if ("hill".equals(parserselect))
-                trainer = new Trainer(trainsentence, weight_length, restart);
-            else
-                trainer = new Trainer(trainsentence, weight_length);
             
-            if ("hill".equals(parserselect)) trainer.hillparser.prune = prune;
-            else trainer.baseparser.prune = prune;
+        }
+        else if ("statistics".equals(modeselect)) {
+            System.out.println("\nFiles Loaded...");
             
-            for (int i=0; i<iteration; ++i) {
-                System.out.println("\nIteration: " + (i+1));
-                trainer.train();
-                System.out.println();
-                AccuracyChecker checker = new AccuracyChecker();
-                if ("hill".equals(parserselect)) {
-//                    checker.testHill(testsentence, evalsentence, trainer.hillparser);
-                    checker.testSecondHill(testsentence, evalsentence, trainer.hillparser);
-                    if (i==iteration-1 && output) checker.output(testsentence, outfile);
-                }
-                else {
-                    checker.testBase(testsentence, evalsentence, trainer.baseparser);
-                    if (i==iteration-1 && output) checker.outputBase(testsentence, outfile);
-                }
+            trainsentence = Reader.read(trainfile, false);
+            testsentence = Reader.read(testfile, true, true);
+            evalsentence = Reader.read(evalfile);
+            
+            System.out.println(String.format(
+                "Train Sents: %d\nTest Sents: %d",                        
+                trainsentence.size(), testsentence.size()));
+
+            System.out.println("Framedict: " + FrameDict.framedict.size());
+            System.out.println("Roles: " + RoleDict.roledict.size());
+            
+            if (ai) {
+                ArgumentIdentifier ai = new ArgumentIdentifier(weight_length);
+                ai.confusionMatrix(testsentence, evalsentence);
             }
         }
-    }    
+    }
+    
+    final private void predicateDisambiguation() {
+        System.out.println("\nPredicate Disambiguator Learning START");        
+        PredicateDisambiguator pd = new PredicateDisambiguator(weight_length);
+
+        for (int i=0; i<iteration; ++i) {        
+            System.out.println("\nIteration: " + (i+1));            
+            pd.train(trainsentence);            
+            System.out.println();                            
+            AccuracyChecker checker = new AccuracyChecker();            
+            checker.testPD(testsentence, evalsentence, pd);                                
+        }          
+        weight_length = weight_length * 100;        
+    }
+    
+    final private void argumentIdentification() throws IOException {
+        System.out.println("\nArgument Identifier Learning START");        
+        ArgumentIdentifier ai = new ArgumentIdentifier(weight_length);
+        for (int i=0; i<iteration; ++i) {
+            System.out.println("\nIteration: " + (i+1));
+            ai.train(trainsentence);
+            System.out.println();                                    
+            AccuracyChecker checker = new AccuracyChecker();                    
+            checker.testAI(testsentence, evalsentence, ai);                    
+            
+            if (i==iteration-1 && output) {
+                ai.confusionMatrix(testsentence, evalsentence);                
+                checker.outputAI(testsentence, outfile);                                    
+            }                
+        }        
+    }
+    
+    final private void argumentClassification() throws IOException {
+        System.out.println("\nArgument Classifier Learning START");        
+
+        final Trainer trainer;
+
+        if ("hill".equals(parserselect)) {
+            trainer = new Trainer(trainsentence, weight_length, restart);
+            trainer.hillparser.prune = prune;
+        }        
+        else {
+            trainer = new Trainer(trainsentence, weight_length);
+            trainer.baseparser.prune = prune;
+        }
+
+        for (int i=0; i<iteration; ++i) {        
+            System.out.println("\nIteration: " + (i+1));            
+            trainer.train();            
+            System.out.println();            
+            AccuracyChecker checker = new AccuracyChecker();
+            
+            if ("hill".equals(parserselect)) {
+//                checker.testHill(testsentence, evalsentence, trainer.hillparser);
+                checker.testSecondHill(testsentence, evalsentence, trainer.hillparser);
+                if (i==iteration-1 && output) checker.output(testsentence, outfile);
+            }
+            else {            
+                checker.testBase(testsentence, evalsentence, trainer.baseparser);                
+                if (i==iteration-1 && output) checker.outputBase(testsentence, outfile);                
+            }            
+        }        
+    }
+    
 }

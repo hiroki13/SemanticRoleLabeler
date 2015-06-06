@@ -19,7 +19,7 @@ public class HillClimbParser {
     public Random rnd;
     public float correct, total, p_total, r_total;
     public long time;
-    public int restart, prune = -1;
+    public int restart, prune = -1, core = 8;
 
     public HillClimbParser(final int weight_length, final int restart) {
 //        this.perceptron = new MultiClassPerceptron(RoleDict.size(), weight_length);
@@ -170,14 +170,14 @@ public class HillClimbParser {
             if (p_graph == null && o_graph != null) {
                 for (int j=0; j<o_graph.length; ++j) {
                     final ArrayList<Integer> o_arguments = o_tokens.get(evalsentence.preds[j]).arguments;
-                    r_total += o_arguments.size();
+//                    r_total += o_arguments.size();
                 }
                 continue;
             }
             else if (o_graph == null && p_graph != null) {
                 for (int j=0; j<p_graph.length; ++j) {
                     final ArrayList<Integer> p_arguments = tokens.get(testsentence.preds[j]).arguments;
-                    p_total += p_arguments.size();
+//                    p_total += p_arguments.size();
                 }
                 continue;
             }
@@ -190,13 +190,23 @@ public class HillClimbParser {
                 final int[] o_roles = o_graph[j];
                 
                 final ArrayList<Integer> arguments = tokens.get(testsentence.preds[j]).arguments;
-                final ArrayList<Integer> o_arguments = o_tokens.get(evalsentence.preds[j]).arguments;
+                final ArrayList<Integer> o_arguments = o_tokens.get(evalsentence.preds[j]).arguments;                
                 p_total += arguments.size();
                 r_total += o_arguments.size();
-                
+/*                for (int l=0; l<o_roles.length; ++l) {
+                    final int r = o_roles[l];
+                    if (r > 0) r_total += 1;
+                }
+                for (int l=0; l<p_roles.length; ++l) {
+                    final int r = p_roles[l];
+                    if (r > 0) p_total += 1;
+                }
+*/                
                 for (int k=0; k<arguments.size(); ++k) {
                     final int arg_id = arguments.get(k);
                     final int role = p_roles[k];
+                    
+//                    if (role == 0) continue;
                     
                     if (match(arg_id, role, o_roles, o_arguments)) correct += 1.0f;
                 }
@@ -530,6 +540,7 @@ public class HillClimbParser {
                                          final int[][][] features) {
 //        final float[][][] scores = new float[sentence.preds.length][sentence.size()][RoleDict.size()];
         final float[][][] scores = new float[sentence.preds.length][sentence.max_arg_length][RoleDict.size()];
+//        final float[][][] scores = new float[sentence.preds.length][sentence.max_arg_length][core];
         
         for (int prd_i=0; prd_i<sentence.preds.length; ++prd_i) {
             final float[][] tmp_scores = scores[prd_i];
@@ -556,6 +567,7 @@ public class HillClimbParser {
                                                final ArrayList<Integer>[] propositions,
                                                final int[][][][][] features2) {
         final float[][][][][][] scores = new float[sentence.preds.length][sentence.max_arg_length][RoleDict.size()][sentence.preds.length][sentence.max_arg_length][RoleDict.size()];
+//        final float[][][][][][] scores = new float[sentence.preds.length][sentence.max_arg_length][core][sentence.preds.length][sentence.max_arg_length][core];
         
         for (int prd_i=0; prd_i<sentence.preds.length; ++prd_i) {
             final float[][][][][] tmp_scores = scores[prd_i];
@@ -837,6 +849,7 @@ public class HillClimbParser {
                 final int role2 = tmp_graph2[j];
                 if (role2 < 0) break;
                 
+                if (role1 < 1) continue;
                 if (role1 == role2) correct += 1.0f;
                 total += 1.0f;
             }
