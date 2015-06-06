@@ -3,11 +3,12 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package semanticrolelabeler;
+package io;
 
 import java.io.File;
-import javax.xml.parsers.*;
-import org.w3c.dom.*;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import org.w3c.dom.Node;
 
 /**
  *
@@ -38,5 +39,5 @@ public class FrameLoader {
         
         return nodes;
     }
-    
+        
 }

@@ -3,8 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
-package semanticrolelabeler;
+package io;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -14,18 +13,18 @@ import java.util.TreeSet;
  *
  * @author hiroki
  */
-final public class Sentence {
+public class Sentence {
     final public int index;
     final public ArrayList<Token> tokens;
     public int[] preds;
     public int[][] o_graph;
     public int[][] p_graph;
 
-    String[][] dep_path;
-    String[][] dep_pos_path;
-    String[][] dep_r_path;
+    public String[][] dep_path;
+    public String[][] dep_pos_path;
+    public String[][] dep_r_path;
     
-    int max_arg_length;
+    public int max_arg_length;
     
     public Sentence(int index) {
         this.index = index;
@@ -191,9 +190,7 @@ final public class Sentence {
             
             for (int j=1; j<this.size(); ++j) {
                 Token arg = tokens.get(j);
-
-                if (arg.apred[i] > -1)
-                    pred.arguments.add(arg.id);
+                if (arg.apred[i] > -1) pred.arguments.add(arg.id);
             }
         }
         
@@ -210,7 +207,7 @@ final public class Sentence {
             final int arg_length = arguments.size();
 
             for (int j=0; j<max_arg_length; ++j) {
-                if (j<arg_length) {
+                if (j < arg_length) {
                     final int arg_i = arguments.get(j);
                     final Token arg = tokens.get(arg_i);
                     tmp_graph[j] = arg.apred[i];
@@ -375,4 +372,5 @@ final public class Sentence {
     final public void add(Token token) {
         this.tokens.add(token);
     }
+    
 }

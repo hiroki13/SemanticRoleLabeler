@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package semanticrolelabeler;
+package io;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -81,5 +81,6 @@ public class FrameDict {
         if (!frames.containsKey(sense))
             frames.put(sense, new ArrayList());
     }
+    
     
 }

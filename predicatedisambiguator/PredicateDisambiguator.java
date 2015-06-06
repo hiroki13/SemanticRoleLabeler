@@ -5,13 +5,13 @@
  */
 package predicatedisambiguator;
 
+import feature.FeatureExtractor;
 import java.util.ArrayList;
 import java.util.HashMap;
-import semanticrolelabeler.FeatureExtracter;
-import semanticrolelabeler.FrameDict;
-import semanticrolelabeler.MultiClassPerceptron;
-import semanticrolelabeler.Sentence;
-import semanticrolelabeler.Token;
+import io.FrameDict;
+import learning.MultiClassPerceptron;
+import io.Sentence;
+import io.Token;
 
 /**
  *
@@ -20,7 +20,7 @@ import semanticrolelabeler.Token;
 public class PredicateDisambiguator {
 
     public HashMap<String, MultiClassPerceptron> perceptrons;
-    final public FeatureExtracter feature_extracter;
+    final public FeatureExtractor feature_extracter;
     final public int weight_length;
     public float correct, total;
     public long time;
@@ -28,7 +28,7 @@ public class PredicateDisambiguator {
     public PredicateDisambiguator(final int weight_length) {
         perceptrons = new HashMap();
         this.weight_length = weight_length;
-        feature_extracter = new FeatureExtracter(weight_length);
+        feature_extracter = new FeatureExtractor(weight_length);
         feature_extracter.pd_cache = new ArrayList();        
     }
 

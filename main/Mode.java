@@ -3,39 +3,47 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package semanticrolelabeler;
+package main;
 
 import argumentidentifier.ArgumentIdentifier;
 import java.io.IOException;
 import java.util.ArrayList;
 import predicatedisambiguator.PredicateDisambiguator;
+import semanticrolelabeler.AccuracyChecker;
+import io.FrameDict;
+import io.OptionParser;
+import io.ParameterChecker;
+import io.Reader;
+import io.RoleDict;
+import io.Sentence;
+import semanticrolelabeler.Trainer;
 
 /**
  *
  * @author hiroki
  */
-final public class Mode {
+public class Mode {
     
-    final OptionParser optionparser;
-    String modeselect, parserselect;    
-    String trainfile, testfile, evalfile, outfile, modelfile, framefile;
-    boolean train, test, eval, output, model, frame, check_accuracy, pd, ai, ac, core;
-    int iteration, restart, weight_length, prune;
-    ArrayList<Sentence> trainsentence, testsentence, evalsentence;
+    public OptionParser optionparser;
+    public String modeselect, parserselect;    
+    public String trainfile, testfile, evalfile, outfile, modelfile, framefile;
+    public boolean train, test, eval, output, model, frame, check_accuracy, pd, ai, ac, core;
+    public int iteration, restart, weight_length, prune;
+    public ArrayList<Sentence> trainsentence, testsentence, evalsentence;
     
     
     Mode(String[] args) throws Exception{
-        this.optionparser = new OptionParser(args);
-        boolean mode = optionparser.isExsist("mode");
-        boolean parser = optionparser.isExsist("parser");
+        optionparser = new OptionParser(args);
         
-        if (mode) modeselect = optionparser.getString("mode");
+        if (optionparser.isExsist("mode"))
+            modeselect = optionparser.getString("mode");
         else {
-            System.out.println("Enter -mode train/test/");
+            System.out.println("Enter -mode train/test/statistics");
             System.exit(0);
         }
 
-        if (parser) parserselect = optionparser.getString("parser");
+        if (optionparser.isExsist("parser"))
+            parserselect = optionparser.getString("parser");
         else {
             System.out.println("Enter -parser base/hill");
             System.exit(0);
@@ -53,7 +61,7 @@ final public class Mode {
         output = optionparser.isExsist("output");
         model = optionparser.isExsist("model");
 //        frame = optionparser.isExsist("frame");
-        core = optionparser.isExsist("core");
+        RoleDict.core = optionparser.isExsist("core");
         check_accuracy = optionparser.isExsist("check");
         weight_length = optionparser.getInt("weight", 1000);
         iteration = optionparser.getInt("iter", 10);
@@ -71,9 +79,7 @@ final public class Mode {
         if ("train".equals(modeselect)) {
             System.out.println("\nFiles Loaded...");
 
-//            core = true;
-            RoleDict.core = core;
-            if (core) RoleDict.add("NULL");
+            if (RoleDict.core) RoleDict.add("NULL");
             
             trainsentence = Reader.read(trainfile, false);
             if (ai) testsentence = Reader.read(testfile, true);
@@ -82,26 +88,14 @@ final public class Mode {
             
             System.out.println(String.format("Train Sents: %d\nTest Sents: %d", trainsentence.size(), testsentence.size()));
             
-            for (int i=0; i<RoleDict.rolearray.size(); ++i) {
-                final int role1 = RoleDict.rolearray.get(i);
-                RoleDict.biroledict.put(String.valueOf(role1), RoleDict.biroledict.size());
-                
-                for (int j=0; j<RoleDict.rolearray.size(); ++j) {
-                    final int role2 = RoleDict.rolearray.get(j);
-                    RoleDict.biroledict.put(String.valueOf(role1) + "-" + String.valueOf(role2), RoleDict.biroledict.size());
-                }            
-            }
+            RoleDict.setBiroledict();
             
             System.out.println("Framedict: " + FrameDict.framedict.size());
             System.out.println("Roles: " + RoleDict.roledict.size());
-            System.out.println("BiRoles: " + RoleDict.biroledict.size());
-            
-            ArrayList<String> a = RoleDict.roledict;
             
             if (pd) predicateDisambiguation();            
             if (ai) argumentIdentification();            
             if (ac) argumentClassification();
-
             
         }
         else if ("statistics".equals(modeselect)) {
@@ -111,10 +105,7 @@ final public class Mode {
             testsentence = Reader.read(testfile, true, true);
             evalsentence = Reader.read(evalfile);
             
-            System.out.println(String.format(
-                "Train Sents: %d\nTest Sents: %d",                        
-                trainsentence.size(), testsentence.size()));
-
+            System.out.println(String.format("Train Sents: %d\nTest Sents: %d", trainsentence.size(), testsentence.size()));
             System.out.println("Framedict: " + FrameDict.framedict.size());
             System.out.println("Roles: " + RoleDict.roledict.size());
             
@@ -187,5 +178,6 @@ final public class Mode {
             }            
         }        
     }
+    
     
 }

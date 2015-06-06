@@ -6,6 +6,10 @@
 package semanticrolelabeler;
 
 import argumentidentifier.ArgumentIdentifier;
+import io.RoleDict;
+import io.SenseDict;
+import io.Sentence;
+import io.Token;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -13,6 +17,8 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import learning.MultiClassPerceptron;
+import learning.Perceptron;
 import predicatedisambiguator.PredicateDisambiguator;
 
 /**
@@ -24,8 +30,7 @@ final public class AccuracyChecker {
     public HillClimbParser h_parser;
     public long time;
 
-    public AccuracyChecker(){
-    }
+    public AccuracyChecker() {}
     
     final public void testHill(final ArrayList<Sentence> testsentencelist,
                                 final ArrayList<Sentence> evalsentencelist,

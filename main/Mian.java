@@ -3,17 +3,17 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package semanticrolelabeler;
+package main;
+
 
 /**
  *
  * @author hiroki
  */
-public class Main {
+public class Mian {
 
     /**
      * @param args the command line arguments
-     * @throws java.lang.Exception
      */
     public static void main(String[] args) throws Exception {
         Mode mode = new Mode(args);

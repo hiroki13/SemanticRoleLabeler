@@ -3,17 +3,20 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package semanticrolelabeler;
+package io;
+
+import main.Mode;
+
 
 /**
  *
  * @author hiroki
  */
-final public class ParameterChecker {
+public class ParameterChecker {
     Mode mode;
     OptionParser optionparser;
     
-    ParameterChecker(Mode mode) {
+    public ParameterChecker(Mode mode) {
         this.mode = mode;
         this.optionparser = mode.optionparser;
     }
@@ -27,7 +30,6 @@ final public class ParameterChecker {
             setTestFile();
             setEvalFile();
             setOutputFile();
-//            setFrameFile();
             
             if (!isParser(parserselect)) {
                 System.out.println("Enter -parser base/hill");
@@ -78,10 +80,6 @@ final public class ParameterChecker {
     
     final public void setOutputFile() {
         if(mode.output) mode.outfile = optionparser.getString("output");
-//        else {
-//            System.out.println("Enter -output filename");
-//            System.exit(0);
-//        }
     }
     
     final public void setModelFile() {
@@ -110,5 +108,6 @@ final public class ParameterChecker {
         }
         return false;
     }
+    
     
 }

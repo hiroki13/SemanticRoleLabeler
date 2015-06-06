@@ -6,6 +6,8 @@
 
 package semanticrolelabeler;
 
+import io.RoleDict;
+import io.Sentence;
 import java.util.ArrayList;
 
 /**

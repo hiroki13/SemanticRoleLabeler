@@ -5,26 +5,34 @@
  */
 package semanticrolelabeler;
 
+import Jama.Matrix;
+import feature.FeatureExtractor;
+import io.FrameDict;
+import io.RoleDict;
+import io.Sentence;
+import io.Token;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
+import learning.MultiClassPerceptron;
 
 /**
  *
  * @author hiroki
  */
 public class HillClimbParser {
-    public MultiClassPerceptron perceptron;
-    final public FeatureExtracter feature_extracter;
-    public Random rnd;
+    final public MultiClassPerceptron perceptron;
+    final public FeatureExtractor feature_extracter;
+    final public Random rnd;
     public float correct, total, p_total, r_total;
     public long time;
-    public int restart, prune = -1, core = 8;
+    final public int restart;
+    public int prune = -1;
 
     public HillClimbParser(final int weight_length, final int restart) {
 //        this.perceptron = new MultiClassPerceptron(RoleDict.size(), weight_length);
         this.perceptron = new MultiClassPerceptron(RoleDict.biroledict.size(), weight_length);
-        this.feature_extracter = new FeatureExtracter(weight_length);
+        this.feature_extracter = new FeatureExtractor(weight_length);
         this.feature_extracter.g_cache = new ArrayList();
         this.rnd = new Random();
         this.restart = restart;
@@ -50,9 +58,7 @@ public class HillClimbParser {
 
             checkAccuracy(sentence.o_graph, best_graph);
 
-            if (i%1000 == 0 && i != 0) {
-                System.out.print(String.format("%d ", i));
-            }
+            if (i%1000 == 0 && i != 0) System.out.print(String.format("%d ", i));
             
         }
         
@@ -79,13 +85,10 @@ public class HillClimbParser {
             
             updateWeights(sentence.o_graph, best_graph, features);
             updateWeights(sentence.o_graph, best_graph, features2);
-//            perceptron.t -= 1.0;
 
             checkAccuracy(sentence.o_graph, best_graph);
 
-            if (i%100 == 0 && i != 0) {
-                System.out.print(String.format("%d ", i));
-            }
+            if (i%100 == 0 && i != 0) System.out.print(String.format("%d ", i));
             
             if (i==prune) break;
             
@@ -107,14 +110,9 @@ public class HillClimbParser {
             if (checkArguments(sentence)) continue;
 
             final int[][][] features = createFeatures(sentence);
-            final int[][][][][] features2 = createSecondFeatures(sentence);
-            final int[][] best_graph = decodeSecond(sentence, features, features2);
-//            final int[][] best_graph = decodePerPred(sentence, features, features2);
+            final int[][] best_graph = decodePerPAS(sentence, features);
             
             updateWeights(sentence.o_graph, best_graph, features);
-            updateWeights(sentence.o_graph, best_graph, features2);
-//            perceptron.t -= 1.0;
-
             checkAccuracy(sentence.o_graph, best_graph);
 
             if (i%100 == 0 && i != 0) {
@@ -225,9 +223,9 @@ public class HillClimbParser {
                 
                 final ArrayList<Integer> arguments = tokens.get(testsentence.preds[j]).arguments;
                 final ArrayList<Integer> o_arguments = o_tokens.get(evalsentence.preds[j]).arguments;                
-                p_total += arguments.size();
-                r_total += o_arguments.size();
-/*                for (int l=0; l<o_roles.length; ++l) {
+//                p_total += arguments.size();
+//                r_total += o_arguments.size();
+                for (int l=0; l<o_roles.length; ++l) {
                     final int r = o_roles[l];
                     if (r > 0) r_total += 1;
                 }
@@ -235,12 +233,12 @@ public class HillClimbParser {
                     final int r = p_roles[l];
                     if (r > 0) p_total += 1;
                 }
-*/                
+                
                 for (int k=0; k<arguments.size(); ++k) {
                     final int arg_id = arguments.get(k);
                     final int role = p_roles[k];
                     
-//                    if (role == 0) continue;
+                    if (role == 0) continue;
                     
                     if (match(arg_id, role, o_roles, o_arguments)) correct += 1.0f;
                 }
@@ -437,6 +435,69 @@ public class HillClimbParser {
                             final int role = proposition.get(role_i);
                             final int[][] tmp_graph = changeGraph(graph, prd_i, role, arg_i);
                             final float score = getPredGraphScore(prd_i, tmp_graph, scores1) + getPredGraphScore(tmp_graph, scores2);
+                            
+                            if (score > best_score) {
+                                best_score = score;
+                                best_role = role;
+                                best_arg_i = arg_i;
+                            }
+                        }                      
+                    }
+                        
+                    graph[prd_i][best_arg_i] = best_role;
+                    if (best_arg_i == prev_best_arg_i && best_role == prev_best_role)
+                        break;
+                    else {
+                        prev_best_arg_i = best_arg_i;
+                        prev_best_role = best_role;
+                    }
+                }
+                    
+                all_score += best_score;
+            }
+
+            if (all_score > prev_best_score) {
+                best_graph = copyGraph(graph);
+                prev_best_score = all_score;                
+            }            
+        }
+        
+        return best_graph;
+    }
+
+    final public int[][] decodePerPAS(final Sentence sentence, final int[][][] features) {
+        final ArrayList<Token> tokens = sentence.tokens;
+        final int[] preds = sentence.preds;
+        final int prds_length = sentence.preds.length;
+        final int max_arg_length = sentence.max_arg_length;
+        final ArrayList<Integer>[] propositions = setPropositions2(sentence);
+        final float[][][] scores1 = getScores(sentence, propositions, features);
+        final ArrayList<Integer> proposition = RoleDict.rolearray;
+        final int prop_length = proposition.size();
+
+        float prev_best_score = -10000000000.0f;
+        int[][] best_graph = new int[prds_length][max_arg_length];
+
+        for (int i=0; i<restart; ++i) {
+            int[][] graph = setInitGraph(sentence, propositions);
+            float all_score = 0.0f;
+
+            for (int prd_i=0; prd_i<prds_length; ++prd_i) {
+                final ArrayList<Integer> arguments = tokens.get(preds[prd_i]).arguments;
+                final int arg_length = arguments.size();
+                if (arg_length == 0) continue;
+                int best_arg_i = -1, best_role = -1;
+                int prev_best_arg_i = -1, prev_best_role = -1;
+                float best_score;
+                    
+                while (true) {
+                    best_score = -10000000000.0f;
+
+                    for (int arg_i=0; arg_i<arg_length; ++arg_i) {
+                        for (int role_i=0; role_i<prop_length; ++role_i) {
+                            final int role = proposition.get(role_i);
+                            final int[][] tmp_graph = changeGraph(graph, prd_i, role, arg_i);
+                            final float score = getPredGraphScore(prd_i, tmp_graph, scores1) + getPASScore(sentence, tmp_graph[prd_i], prd_i);
                             
                             if (score > best_score) {
                                 best_score = score;
@@ -754,8 +815,8 @@ public class HillClimbParser {
         return score;
     }
     
-    final private float getPASScore(final int[] graph) {
-        
+    final private float getPASScore(final Sentence sentence, final int[] graph, final int prd_i) {
+        final Matrix x = new Matrix(lookupFeature(sentence, graph, prd_i), 50*3);
     }
     
 /*    
@@ -872,6 +933,10 @@ public class HillClimbParser {
         return features;
     }
     
+    final private double[] lookupFeature(final Sentence sentence, final int[] graph, final int prd_i) {
+        return feature_extracter.lookupFeature(sentence, graph, prd_i);
+    }
+
     final private float calcScore(final int[] feature, final int label){
         return perceptron.calcScore(feature, label);
     }

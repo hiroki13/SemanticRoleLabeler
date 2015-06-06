@@ -5,7 +5,12 @@
  */
 package semanticrolelabeler;
 
+import feature.FeatureExtractor;
+import io.RoleDict;
+import io.Sentence;
+import io.Token;
 import java.util.ArrayList;
+import learning.MultiClassPerceptron;
 
 /**
  *
@@ -13,14 +18,14 @@ import java.util.ArrayList;
  */
 public class BaseParser {
     public MultiClassPerceptron perceptron;
-    public FeatureExtracter feature_extracter;
+    public FeatureExtractor feature_extracter;
     public float correct, total, r_total, p_total;
     public long time;
     public int prune = -1;
     
     public BaseParser(final int label_length, final int weight_length) {
         this.perceptron = new MultiClassPerceptron(label_length, weight_length);
-        this.feature_extracter = new FeatureExtracter(weight_length);
+        this.feature_extracter = new FeatureExtractor(weight_length);
         this.feature_extracter.g_cache = new ArrayList();
     }
     

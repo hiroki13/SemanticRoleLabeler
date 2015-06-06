@@ -3,13 +3,13 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package semanticrolelabeler;
+package io;
 
 /**
  *
  * @author hiroki
  */
-final public class OptionParser {
+public class OptionParser {
     final private String[] args;
 
     public OptionParser(String[] args){
@@ -32,5 +32,5 @@ final public class OptionParser {
             if(("-"+key).equals(args[i])) return Integer.valueOf(args[i+1]);
         return defaultvalue;
     }
-        
+            
 }

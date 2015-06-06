@@ -3,17 +3,18 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
+package feature;
 
-package semanticrolelabeler;
-
-import java.io.Serializable;
+import io.LookupTable;
+import io.Sentence;
+import io.Token;
 import java.util.ArrayList;
 
 /**
  *
  * @author hiroki
  */
-final public class FeatureExtracter implements Serializable{
+public class FeatureExtractor {
     final int weight_size;
     int k;
     int total;
@@ -21,7 +22,7 @@ final public class FeatureExtracter implements Serializable{
     public ArrayList<String[][][][][]> second_cache;
     public ArrayList<String[][]> pd_cache;
     
-    public FeatureExtracter(final int weight_size) {
+    public FeatureExtractor(final int weight_size) {
         this.weight_size = weight_size;
     }
 
@@ -46,6 +47,37 @@ final public class FeatureExtracter implements Serializable{
         return encoded_feature;        
     }
 
+    final public double[] lookupFeature(final Sentence sentence, final int[] graph, final int prd_i) {        
+        final double[] f_vector = new double[3*50];
+        final ArrayList<Token> tokens = sentence.tokens;
+
+        final double[] wp2;
+        if (target-2 > 0) wp2 = tokens.get(target-2).vec;
+        else wp2 = LookupTable.get("BOS-2");
+
+        final double[] wp1;
+        if (target-1 > 0) wp1 = tokens.get(target-1).vec;
+        else wp1 = LookupTable.get("BOS-1");
+
+        final double[] wt = tokens.get(target).vec;
+
+        final double[] wn1;
+        if (target+1 < sentence.size()-1) wn1 = tokens.get(target+1).vec;
+        else wn1 = LookupTable.get("EOS-1");
+
+        final double[] wn2;
+        if (target+2 < sentence.size()-1) wn2 = tokens.get(target+2).vec;
+        else wn2 = LookupTable.get("EOS-2");
+        
+        for (int i=0; i<weight_size; ++i) f_vector[i] = wp2[i];
+        for (int i=0; i<weight_size; ++i) f_vector[i+weight_size] = wp1[i];
+        for (int i=0; i<weight_size; ++i) f_vector[i+weight_size*2] = wt[i];
+        for (int i=0; i<weight_size; ++i) f_vector[i+weight_size*3] = wn1[i];
+        for (int i=0; i<weight_size; ++i) f_vector[i+weight_size*4] = wn2[i];
+        
+        return f_vector;
+    }
+    
     
     final public String[] instantiateFirstOrdFeature(final Sentence sentence,
                                                         final int prd_i,
@@ -531,4 +563,5 @@ final public class FeatureExtracter implements Serializable{
         return new_feature;
     }
 */    
+    
 }

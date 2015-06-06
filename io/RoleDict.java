@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package semanticrolelabeler;
+package io;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -42,4 +42,17 @@ public class RoleDict {
     final static public int size() {
         return roledict.size();
     }
+    
+    final static public void setBiroledict() {
+        for (int i=0; i<rolearray.size(); ++i) {        
+            final int role1 = rolearray.get(i);            
+            biroledict.put(String.valueOf(role1), biroledict.size());
+                            
+            for (int j=0; j<rolearray.size(); ++j) {            
+                final int role2 = rolearray.get(j);                
+                biroledict.put(String.valueOf(role1) + "-" + String.valueOf(role2), biroledict.size());                
+            }                        
+        }        
+    }
+    
 }

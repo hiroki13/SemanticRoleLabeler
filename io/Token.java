@@ -3,8 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
-package semanticrolelabeler;
+package io;
 
 import java.util.ArrayList;
 
@@ -12,7 +11,7 @@ import java.util.ArrayList;
  *
  * @author hiroki
  */
-final public class Token {
+public class Token {
     final public int id;
     final public String form;
     final public String lemma;
@@ -29,6 +28,7 @@ final public class Token {
     public int pred;
     public int[] apred;
     final public String cpos;
+    final public double[] vec;
     
     final public ArrayList<Integer> children;
     public String leftmostw;
@@ -63,6 +63,7 @@ final public class Token {
         fillpred = line[12];
         pred = getSenseID(cpos, line[13]);
         apred = setApred(line, test);
+        vec = LookupTable.get(form);
         
         children = new ArrayList<>();
         leftmostw = "";
@@ -118,19 +119,20 @@ final public class Token {
         
         if (!test) {
             for (int i=0; i<apred.length; ++i) {
-//                if (!"_".equals(line[14+i]) && !line[14+i].startsWith("R") && !line[14+i].startsWith("C"))
-                if (!"_".equals(line[14+i]))
-                    apred[i] = RoleDict.addAndGet(line[14+i]);
-                else
-                    apred[i] = -1;
+                if (!"_".equals(line[14+i])) {
+                    final int role = RoleDict.addAndGet(line[14+i]);
+                    if (!RoleDict.core) apred[i] = role;
+                    else if (role > 0) apred[i] = role;
+                    else apred[i] = -1;
+//                    else apred[i] = role;
+                }
+                else apred[i] = -1;
             }
         }
         else {
             for (int i=0; i<apred.length; ++i) {
-                if ("1".equals(line[14+i]))
-                    apred[i] = 1000;
-                else
-                    apred[i] = -1;
+                if ("1".equals(line[14+i])) apred[i] = 1000;
+                else apred[i] = -1;
             }
         }
         
@@ -151,4 +153,5 @@ final public class Token {
         return plemma + "N";
     }    
         
+    
 }

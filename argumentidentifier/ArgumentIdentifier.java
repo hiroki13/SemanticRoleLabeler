@@ -5,15 +5,14 @@
  */
 package argumentidentifier;
 
+import feature.FeatureExtractor;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
-import semanticrolelabeler.FeatureExtracter;
-import semanticrolelabeler.Perceptron;
-import semanticrolelabeler.RoleDict;
-import semanticrolelabeler.Sentence;
-import semanticrolelabeler.Token;
+import learning.Perceptron;
+import io.RoleDict;
+import io.Sentence;
+import io.Token;
 
 /**
  *
@@ -22,14 +21,14 @@ import semanticrolelabeler.Token;
 public class ArgumentIdentifier {
     
     final public Perceptron perceptron;
-    final public FeatureExtracter feature_extracter;
+    final public FeatureExtractor feature_extracter;
     public float correct, p_total, r_total;
     public float correct1, correct2, correct3, total1, total2, total3;
     public long time;
     
     public ArgumentIdentifier(final int weight_length) {
         perceptron = new Perceptron(weight_length);
-        feature_extracter = new FeatureExtracter(weight_length);
+        feature_extracter = new FeatureExtractor(weight_length);
         feature_extracter.g_cache = new ArrayList();
     }
     
@@ -47,10 +46,9 @@ public class ArgumentIdentifier {
                 feature_extracter.g_cache.add(new String[sentence.preds.length][sentence.size()][]);
 
             if (sentence.preds.length == 0) continue;
-            if (checkArguments(sentence)) continue;
             
             for (int prd_i=0; prd_i<preds.length; ++prd_i) {
-            
+                
                 for (int arg_id=1; arg_id<sentence.size(); ++arg_id) {            
                     final Token token = tokens.get(arg_id);                            
                     final int[] features = extractFeatures(sentence, prd_i, arg_id);
@@ -58,8 +56,7 @@ public class ArgumentIdentifier {
                     final int label = sign(score);
                     final int o_label = sign((float) token.apred[prd_i]);
                     
-                    
-                    if (label == o_label) {           
+                    if (label == o_label) {      
                         if (label == 1) {
                             correct += 1.0;
                             p_total += 1.0f;
@@ -72,8 +69,7 @@ public class ArgumentIdentifier {
                             perceptron.updateWeights(-1, features);
                         }
                         else perceptron.updateWeights(1, features);
-                    }            
-
+                    }
                     
                     if (o_label == 1) r_total += 1.0;
                 }
@@ -155,9 +151,9 @@ public class ArgumentIdentifier {
                     final int arg_id = pred.arguments.get(j);
                     
                     if (o_pred.arguments.contains(arg_id)) correct += 1.0;
-                    p_total += 1.0;
                 }
-                
+
+                p_total += pred.arguments.size();
                 r_total += o_pred.arguments.size();            
 
             }
@@ -322,13 +318,5 @@ public class ArgumentIdentifier {
         if (score >= 0) return 1;
         return -1;
     }
-    
-    final public boolean checkArguments(final Sentence sentence) {
-        for (int j=0; j<sentence.preds.length; ++j) {        
-            final Token pred = sentence.tokens.get(sentence.preds[j]);
-            if (pred.arguments.isEmpty()) return true;
-        }
-        return false;
-    }    
     
 }

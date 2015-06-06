@@ -3,8 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
-package semanticrolelabeler;
+package io;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
@@ -15,8 +14,7 @@ import java.util.ArrayList;
  *
  * @author hiroki
  */
-final public class Reader {
-    
+public class Reader {
     final public static ArrayList<Sentence> read(final String fn, final boolean test) throws Exception{
         int i = 0;
         final String delimiter = "\t";
@@ -137,4 +135,5 @@ final public class Reader {
         return sentenceList;
     }
 
+    
 }

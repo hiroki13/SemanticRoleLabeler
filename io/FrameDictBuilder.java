@@ -3,9 +3,11 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package semanticrolelabeler;
+package io;
 
-import org.w3c.dom.*;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 /**
  *
@@ -75,4 +77,5 @@ public class FrameDictBuilder {
             if (gchildren.getLength() > 0) buildDict(gchildren);
         }
     }    
+    
 }
