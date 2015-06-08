@@ -13,7 +13,7 @@ import java.util.Random;
  *
  * @author hiroki
  */
-public class NeuralNetwork {
+public class NeuralNetwork extends Classifier{
     final Matrix w_ji;
     final Matrix w_kj;
     Matrix h;//j*1

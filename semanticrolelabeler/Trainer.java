@@ -9,6 +9,8 @@ package semanticrolelabeler;
 import io.RoleDict;
 import io.Sentence;
 import java.util.ArrayList;
+import learning.Classifier;
+import learning.MultiClassPerceptron;
 
 /**
  *
@@ -16,29 +18,33 @@ import java.util.ArrayList;
  */
 final public class Trainer {
     final public ArrayList<Sentence> sentencelist;
-    public float correct, total;
-    public BaseParser baseparser;
-    public HillClimbParser hillparser;
+    final public Parser parser;
+    final public String parser_name;
     
-    public Trainer(final ArrayList<Sentence> sentencelist,
-                    final int weight_length,
-                    final int restart) {
+    public Trainer(final ArrayList<Sentence> sentencelist, final Parser p, final String p_name) {
         this.sentencelist = sentencelist;
-        this.hillparser = new HillClimbParser(weight_length, restart);
+        this.parser = p;
+        this.parser_name = p_name;
+    }
+    
+    public Trainer(final ArrayList<Sentence> sentencelist, final String p_name,
+                    final int weight_length, final int restart, final int prune) {
+        this.sentencelist = sentencelist;
+        this.parser_name = p_name;
+
+        if ("hill".equals(p_name)) {
+            Classifier c = new MultiClassPerceptron(RoleDict.biroledict.size(), weight_length);
+            parser = new HillClimbParser(c, weight_length, restart, prune);
+        }
+        else {
+            Classifier c = new MultiClassPerceptron(RoleDict.roledict.size(), weight_length);
+            parser = new BaseParser(c, weight_length, prune);
+        }
     }
 
-    public Trainer(final ArrayList<Sentence> sentencelist,
-                    final int weight_length) {
-        this.sentencelist = sentencelist;
-        this.baseparser = new BaseParser(RoleDict.size(), weight_length);
-    }
-    
     final public void train(){
-        if (baseparser != null)
-            baseparser.train(sentencelist);
-        else
-            hillparser.trainSecond(sentencelist);
-//            hillparser.train(sentencelist);
+        if (!"hill".equals(parser_name)) parser.train(sentencelist);
+        else parser.trainSecond(sentencelist);
     }
 
 }

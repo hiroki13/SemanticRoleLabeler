@@ -11,11 +11,17 @@ import java.util.ArrayList;
 import predicatedisambiguator.PredicateDisambiguator;
 import semanticrolelabeler.AccuracyChecker;
 import io.FrameDict;
+import io.LookupTable;
 import io.OptionParser;
 import io.ParameterChecker;
 import io.Reader;
 import io.RoleDict;
 import io.Sentence;
+import learning.Classifier;
+import learning.MultiClassPerceptron;
+import semanticrolelabeler.BaseParser;
+import semanticrolelabeler.HillClimbParser;
+import semanticrolelabeler.Parser;
 import semanticrolelabeler.Trainer;
 
 /**
@@ -26,7 +32,7 @@ public class Mode {
     
     public OptionParser optionparser;
     public String modeselect, parserselect;    
-    public String trainfile, testfile, evalfile, outfile, modelfile, framefile;
+    public String trainfile, testfile, evalfile, outfile, modelfile, framefile, embedfile;
     public boolean train, test, eval, output, model, frame, check_accuracy, pd, ai, ac, core;
     public int iteration, restart, weight_length, prune;
     public ArrayList<Sentence> trainsentence, testsentence, evalsentence;
@@ -81,6 +87,11 @@ public class Mode {
 
             if (RoleDict.core) RoleDict.add("NULL");
             
+//            weight_length = 50;
+            LookupTable.weight_length = 50;
+
+            if (embedfile != null) Reader.embeddings(embedfile);
+
             trainsentence = Reader.read(trainfile, false);
             if (ai) testsentence = Reader.read(testfile, true);
             else testsentence = Reader.read(testfile, true, true);
@@ -148,34 +159,16 @@ public class Mode {
     }
     
     final private void argumentClassification() throws IOException {
-        System.out.println("\nArgument Classifier Learning START");        
-
-        final Trainer trainer;
-
-        if ("hill".equals(parserselect)) {
-            trainer = new Trainer(trainsentence, weight_length, restart);
-            trainer.hillparser.prune = prune;
-        }        
-        else {
-            trainer = new Trainer(trainsentence, weight_length);
-            trainer.baseparser.prune = prune;
-        }
+        System.out.println("\nArgument Classifier Learning START");
+        final Trainer trainer = new Trainer(trainsentence, parserselect, weight_length, restart, prune);
 
         for (int i=0; i<iteration; ++i) {        
             System.out.println("\nIteration: " + (i+1));            
             trainer.train();            
             System.out.println();            
+
             AccuracyChecker checker = new AccuracyChecker();
-            
-            if ("hill".equals(parserselect)) {
-//                checker.testHill(testsentence, evalsentence, trainer.hillparser);
-                checker.testSecondHill(testsentence, evalsentence, trainer.hillparser);
-                if (i==iteration-1 && output) checker.output(testsentence, outfile);
-            }
-            else {            
-                checker.testBase(testsentence, evalsentence, trainer.baseparser);                
-                if (i==iteration-1 && output) checker.outputBase(testsentence, outfile);                
-            }            
+            checker.test(testsentence, evalsentence, trainer.parser, parserselect);
         }        
     }
     

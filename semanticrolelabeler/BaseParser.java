@@ -10,25 +10,22 @@ import io.RoleDict;
 import io.Sentence;
 import io.Token;
 import java.util.ArrayList;
-import learning.MultiClassPerceptron;
+import learning.Classifier;
 
 /**
  *
  * @author hiroki
  */
-public class BaseParser {
-    public MultiClassPerceptron perceptron;
-    public FeatureExtractor feature_extracter;
-    public float correct, total, r_total, p_total;
-    public long time;
-    public int prune = -1;
+public class BaseParser extends Parser{
     
-    public BaseParser(final int label_length, final int weight_length) {
-        this.perceptron = new MultiClassPerceptron(label_length, weight_length);
+    public BaseParser(final Classifier c, final int weight_length, final int prune) {
+        this.classifier = c;
+        this.weight_length = weight_length;
         this.feature_extracter = new FeatureExtractor(weight_length);
-        this.feature_extracter.g_cache = new ArrayList();
+        this.prune = prune;
     }
     
+    @Override
     final public void train(final ArrayList<Sentence> sentencelist) {
         correct = 0.0f;
         total = 0.0f;
@@ -52,7 +49,7 @@ public class BaseParser {
                     final int label = decode(pred, feature);
                     final int o_label = arg.apred[prd_i];
             
-                    perceptron.updateWeights(o_label, label, feature);
+                    classifier.updateWeights(o_label, label, feature);
                     
                     if (o_label == label) correct += 1.0;
                     total += 1.0;
@@ -60,9 +57,9 @@ public class BaseParser {
             }
 
             if (i%1000 == 0 && i != 0) System.out.print(String.format("%d ", i));
+
             if (i==prune) break;
-            
-            
+                        
         }
         
         System.out.println("\tCorrect: " + correct);                        
@@ -195,7 +192,7 @@ public class BaseParser {
     }
             
     final private float calcScore(final int[] feature, final int role){
-        return perceptron.calcScore(feature, role);
+        return classifier.calcScore(feature, role);
     }
     
     final public boolean checkArguments(final Sentence sentence) {

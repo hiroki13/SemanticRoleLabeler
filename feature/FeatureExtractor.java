@@ -24,6 +24,7 @@ public class FeatureExtractor {
     
     public FeatureExtractor(final int weight_size) {
         this.weight_size = weight_size;
+        this.g_cache = new ArrayList();
     }
 
     final public int[] extractFirstOrdFeature(final Sentence sentence,

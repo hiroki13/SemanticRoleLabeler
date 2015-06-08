@@ -14,30 +14,24 @@ import io.Token;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
-import learning.MultiClassPerceptron;
+import learning.Classifier;
 
 /**
  *
  * @author hiroki
  */
-public class HillClimbParser {
-    final public MultiClassPerceptron perceptron;
-    final public FeatureExtractor feature_extracter;
-    final public Random rnd;
-    public float correct, total, p_total, r_total;
-    public long time;
-    final public int restart;
-    public int prune = -1;
+public class HillClimbParser extends Parser{
 
-    public HillClimbParser(final int weight_length, final int restart) {
-//        this.perceptron = new MultiClassPerceptron(RoleDict.size(), weight_length);
-        this.perceptron = new MultiClassPerceptron(RoleDict.biroledict.size(), weight_length);
+    public HillClimbParser(final Classifier c, final int weight_length, final int restart, final int prune) {
+        this.classifier = c;
+        this.weight_length = weight_length;
         this.feature_extracter = new FeatureExtractor(weight_length);
-        this.feature_extracter.g_cache = new ArrayList();
         this.rnd = new Random();
         this.restart = restart;
+        this.prune = prune;
     }
     
+    @Override
     final public void train(final ArrayList<Sentence> sentencelist) {
         correct = 0.0f;
         total = 0.0f;
@@ -60,6 +54,7 @@ public class HillClimbParser {
 
             if (i%1000 == 0 && i != 0) System.out.print(String.format("%d ", i));
             
+            if (i==prune) break;
         }
         
         System.out.println("\n\tCorrect: " + correct);                        
@@ -68,6 +63,7 @@ public class HillClimbParser {
     }
 
     
+    @Override
     final public void trainSecond(final ArrayList<Sentence> sentencelist) {
         correct = 0.0f;
         total = 0.0f;
@@ -129,6 +125,7 @@ public class HillClimbParser {
     }
 
     
+    @Override
     final public void test(final ArrayList<Sentence> testsentencelist) {
         time = (long) 0.0;
 
@@ -155,6 +152,7 @@ public class HillClimbParser {
         }
     }
 
+    @Override
     final public void testSecond(final ArrayList<Sentence> testsentencelist) {
         time = (long) 0.0;
 
@@ -181,6 +179,7 @@ public class HillClimbParser {
     }
 
     
+    @Override
     final public void eval(final ArrayList<Sentence> testsentencelist,
                             final ArrayList<Sentence> evalsentencelist) {
         correct = 0.0f;
@@ -938,7 +937,7 @@ public class HillClimbParser {
     }
 
     final private float calcScore(final int[] feature, final int label){
-        return perceptron.calcScore(feature, label);
+        return classifier.calcScore(feature, label);
     }
     
     final public void checkAccuracy(final int[][] o_graph, final int[][] graph) {
@@ -979,7 +978,7 @@ public class HillClimbParser {
                 final int role = tmp_graph[j];
                 if (role < 0) break;
                 final int[] feature = tmp_features[j];
-                perceptron.updateWeights(RoleDict.biroledict.get(String.valueOf(o_role)),
+                classifier.updateWeights(RoleDict.biroledict.get(String.valueOf(o_role)),
                                          RoleDict.biroledict.get(String.valueOf(role)),
                                          feature, false);
             }
@@ -1015,7 +1014,7 @@ public class HillClimbParser {
                         if (role2 < 0) break;
                         final int[] feature = tmp_features3[arg_j];
                 
-                        perceptron.updateWeights(RoleDict.biroledict.get(String.valueOf(o_role1) + "-" + String.valueOf(o_role2)),
+                        classifier.updateWeights(RoleDict.biroledict.get(String.valueOf(o_role1) + "-" + String.valueOf(o_role2)),
                                                  RoleDict.biroledict.get(String.valueOf(role1) + "-" + String.valueOf(role2)),
                                                  feature, true);
                     }

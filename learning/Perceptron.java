@@ -10,10 +10,11 @@ package learning;
  * @author hiroki
  */
 public class Perceptron {
+
     public float[] weight;
     public float[] aweight;
     public float t = 1.0f;
-
+    
     public Perceptron(final int weight_length){
         this.weight = new float[weight_length];
         this.aweight = new float[weight_length];

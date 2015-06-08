@@ -135,5 +135,20 @@ public class Reader {
         return sentenceList;
     }
 
+    final public static void embeddings(String fn) throws Exception {
+        try(BufferedReader br = new BufferedReader(
+                                new InputStreamReader(
+                                new FileInputStream(fn)))){
+            String line;
+            while((line=br.readLine()) != null){
+                String[] split = line.split(" ");
+                String w = split[0];
+                final double[] embedding = new double[split.length-1];
+                for (int i=1; i<split.length; ++i)
+                    embedding[i-1] = Double.valueOf(split[i]);
+                LookupTable.token_dict.put(w, embedding);
+            }
+        }
+    }
     
 }

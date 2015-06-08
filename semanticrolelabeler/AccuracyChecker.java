@@ -17,6 +17,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import learning.Classifier;
 import learning.MultiClassPerceptron;
 import learning.Perceptron;
 import predicatedisambiguator.PredicateDisambiguator;
@@ -26,41 +27,29 @@ import predicatedisambiguator.PredicateDisambiguator;
  * @author hiroki
  */
 final public class AccuracyChecker {
-    public BaseParser b_parser;
-    public HillClimbParser h_parser;
+    public Parser parser;
     public long time;
 
     public AccuracyChecker() {}
-    
-    final public void testHill(final ArrayList<Sentence> testsentencelist,
-                                final ArrayList<Sentence> evalsentencelist,
-                                final HillClimbParser p){
-        h_parser = new HillClimbParser(p.perceptron.weight[0].length, p.restart);
-        h_parser.perceptron.weight = averagingWeights(p.perceptron);
-        h_parser.test(testsentencelist);
-        h_parser.eval(testsentencelist, evalsentencelist);                
-    }
-
-    final public void testSecondHill(final ArrayList<Sentence> testsentencelist,
-                                       final ArrayList<Sentence> evalsentencelist,
-                                       final HillClimbParser p){
-        h_parser = new HillClimbParser(p.perceptron.weight[0].length, p.restart);
-        h_parser.perceptron.weight = averagingWeights(p.perceptron);
-//        h_parser.perceptron.w = averagingWeightsSecond(p.perceptron);
-        h_parser.testSecond(testsentencelist);
-        h_parser.eval(testsentencelist, evalsentencelist);                
-    }
-
-    
-    final public void testBase(final ArrayList<Sentence> testsentencelist,
-                                final ArrayList<Sentence> evalsentencelist,
-                                final BaseParser p){
-        time = (long) 0.0;
         
-        b_parser = new BaseParser(p.perceptron.weight.length, p.perceptron.weight[0].length);
-        b_parser.perceptron.weight = averagingWeights(p.perceptron);
-        b_parser.test(testsentencelist);
-        b_parser.eval(testsentencelist, evalsentencelist);                
+    final public void test(final ArrayList<Sentence> testsentencelist,
+                            final ArrayList<Sentence> evalsentencelist,
+                            final Parser p, final String p_name){
+        if ("hill".equals(p_name)) {
+            final Classifier c = new MultiClassPerceptron(RoleDict.biroledict.size(), p.weight_length);
+            parser = new HillClimbParser(c, p.weight_length, p.restart, p.prune);
+            parser.classifier.weight = averagingWeights(p.classifier);
+//            parser.test(testsentencelist);
+            parser.testSecond(testsentencelist);
+        }
+        else {
+            final Classifier c = new MultiClassPerceptron(RoleDict.roledict.size(), p.weight_length);
+            parser = new BaseParser(c, p.weight_length, p.prune);
+            parser.classifier.weight = averagingWeights(p.classifier);
+            parser.test(testsentencelist);
+        }
+
+        parser.eval(testsentencelist, evalsentencelist);                
     }
     
     
@@ -289,16 +278,16 @@ final public class AccuracyChecker {
         return new_ps;
     }
     
-    final private float[][] averagingWeights(final MultiClassPerceptron p){
-        final float[][] new_weight = new float[p.weight.length][p.weight[0].length];
+    final private float[][] averagingWeights(final Classifier c){
+        final float[][] new_weight = new float[c.weight.length][c.weight[0].length];
         
-        for (int i = 0; i<p.weight.length; i++) {
+        for (int i = 0; i<c.weight.length; i++) {
             final float[] tmp_new_weight = new_weight[i];
-            final float[] tmp_weight = p.weight[i];
-            final float[] tmp_aweight = p.aweight[i];
+            final float[] tmp_weight = c.weight[i];
+            final float[] tmp_aweight = c.aweight[i];
             
             for (int j = 0; j<tmp_weight.length; ++j)
-                tmp_new_weight[j] = tmp_weight[j] - tmp_aweight[j] /p.t;
+                tmp_new_weight[j] = tmp_weight[j] - tmp_aweight[j] /c.t;
         }
 
         return new_weight;
