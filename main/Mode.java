@@ -17,11 +17,6 @@ import io.ParameterChecker;
 import io.Reader;
 import io.RoleDict;
 import io.Sentence;
-import learning.Classifier;
-import learning.MultiClassPerceptron;
-import semanticrolelabeler.BaseParser;
-import semanticrolelabeler.HillClimbParser;
-import semanticrolelabeler.Parser;
 import semanticrolelabeler.Trainer;
 
 /**
@@ -85,9 +80,9 @@ public class Mode {
         if ("train".equals(modeselect)) {
             System.out.println("\nFiles Loaded...");
 
-            if (RoleDict.core) RoleDict.add("NULL");
+//            if (RoleDict.core && !ac) RoleDict.add("NULL");
             
-//            weight_length = 50;
+            weight_length = 50;
             LookupTable.weight_length = 50;
 
             if (embedfile != null) Reader.embeddings(embedfile);
@@ -100,6 +95,8 @@ public class Mode {
             System.out.println(String.format("Train Sents: %d\nTest Sents: %d", trainsentence.size(), testsentence.size()));
             
             RoleDict.setBiroledict();
+            
+            ArrayList a = RoleDict.roledict;
             
             System.out.println("Framedict: " + FrameDict.framedict.size());
             System.out.println("Roles: " + RoleDict.roledict.size());
@@ -160,8 +157,10 @@ public class Mode {
     
     final private void argumentClassification() throws IOException {
         System.out.println("\nArgument Classifier Learning START");
+        restart = 1;
         final Trainer trainer = new Trainer(trainsentence, parserselect, weight_length, restart, prune);
 
+        iteration = 50;
         for (int i=0; i<iteration; ++i) {        
             System.out.println("\nIteration: " + (i+1));            
             trainer.train();            

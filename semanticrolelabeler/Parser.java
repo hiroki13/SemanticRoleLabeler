@@ -37,10 +37,14 @@ public class Parser {
     public void train(final ArrayList<Sentence> sentencelist) {}
     
     public void trainSecond(final ArrayList<Sentence> sentencelist) {}
+
+    public void trainNN(final ArrayList<Sentence> sentencelist) {}
     
     public void test(final ArrayList<Sentence> testsentencelist) {}
 
     public void testSecond(final ArrayList<Sentence> testsentencelist) {}
+
+    public void testNN(final ArrayList<Sentence> testsentencelist) {}
     
     public void eval(final ArrayList<Sentence> testsentencelist, final ArrayList<Sentence> evalsentencelist) {}
 }

@@ -49,34 +49,33 @@ public class FeatureExtractor {
     }
 
     final public double[] lookupFeature(final Sentence sentence, final int[] graph, final int prd_i) {        
-        final double[] f_vector = new double[3*50];
+        final double[] f_vector = new double[3*weight_size];
         final ArrayList<Token> tokens = sentence.tokens;
+        final Token prd = tokens.get(sentence.preds[prd_i]);
+        final int[] input_args = inputArgs(graph);
 
-        final double[] wp2;
-        if (target-2 > 0) wp2 = tokens.get(target-2).vec;
-        else wp2 = LookupTable.get("BOS-2");
-
-        final double[] wp1;
-        if (target-1 > 0) wp1 = tokens.get(target-1).vec;
-        else wp1 = LookupTable.get("BOS-1");
-
-        final double[] wt = tokens.get(target).vec;
-
-        final double[] wn1;
-        if (target+1 < sentence.size()-1) wn1 = tokens.get(target+1).vec;
-        else wn1 = LookupTable.get("EOS-1");
-
-        final double[] wn2;
-        if (target+2 < sentence.size()-1) wn2 = tokens.get(target+2).vec;
-        else wn2 = LookupTable.get("EOS-2");
-        
-        for (int i=0; i<weight_size; ++i) f_vector[i] = wp2[i];
-        for (int i=0; i<weight_size; ++i) f_vector[i+weight_size] = wp1[i];
-        for (int i=0; i<weight_size; ++i) f_vector[i+weight_size*2] = wt[i];
-        for (int i=0; i<weight_size; ++i) f_vector[i+weight_size*3] = wn1[i];
-        for (int i=0; i<weight_size; ++i) f_vector[i+weight_size*4] = wn2[i];
+        final double[] prd_vec = prd.vec;
+        for (int i=0; i<weight_size; ++i) f_vector[i] = prd_vec[i];
+                
+        for (int i=0; i<input_args.length; ++i) {
+            final int arg_i = input_args[i];
+            final double[] vec;
+            if (arg_i > -1) vec = tokens.get(prd.arguments.get(arg_i)).vec;
+            else vec = LookupTable.get("NULL");
+            for (int j=0; j<weight_size; ++j) f_vector[j+weight_size*(i+1)] = vec[j];
+        }
         
         return f_vector;
+    }
+    
+    final private int[] inputArgs(final int[] graph) {
+        final int[] input = new int[2];
+        for (int i=0; i<input.length; ++i) input[i] = -1;
+        for (int i=0; i<graph.length; ++i) {
+            if (graph[i] == 1) input[0] = i;
+            else if (graph[i] == 2) input [1] = i;
+        }
+        return input;
     }
     
     

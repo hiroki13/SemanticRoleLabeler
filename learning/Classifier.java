@@ -5,6 +5,8 @@
  */
 package learning;
 
+import Jama.Matrix;
+
 /**
  *
  * @author hiroki
@@ -24,5 +26,10 @@ public class Classifier {
     public void updateWeights(final int o_label, final int p_label, final int[] feature){}
     
     public void updateWeights(final int o_label, final int p_label, final int[] feature, final boolean second){}
+
+    public double forward(final Matrix x) {
+        return 0.0d;
+    }
     
+    public void backpropagation(final int o_tag, final Matrix x) {}
 }

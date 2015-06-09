@@ -32,7 +32,7 @@ public class ParameterChecker {
             setOutputFile();
             
             if (!isParser(parserselect)) {
-                System.out.println("Enter -parser base/hill");
+                System.out.println("Enter -parser base/hill/nn");
                 System.exit(0);
             }
         }
@@ -43,7 +43,7 @@ public class ParameterChecker {
             setOutputFile();
             
             if (!isParser(parserselect)) {
-                System.out.println("Enter -parser base/hill");
+                System.out.println("Enter -parser base/hill/nn");
                 System.exit(0);
             }
         }
@@ -101,7 +101,7 @@ public class ParameterChecker {
 */
     
     final public boolean isParser(String parserselect) {
-        String[] possible_parser = {"base","hill"};
+        String[] possible_parser = {"base", "hill", "nn"};
         
         for (int i=0; i<possible_parser.length; i++) {
             if (parserselect.equals(possible_parser[i])) return true;

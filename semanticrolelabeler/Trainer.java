@@ -11,6 +11,7 @@ import io.Sentence;
 import java.util.ArrayList;
 import learning.Classifier;
 import learning.MultiClassPerceptron;
+import learning.NeuralNetwork;
 
 /**
  *
@@ -36,6 +37,11 @@ final public class Trainer {
             Classifier c = new MultiClassPerceptron(RoleDict.biroledict.size(), weight_length);
             parser = new HillClimbParser(c, weight_length, restart, prune);
         }
+        else if ("nn".equals(p_name)) {
+            Classifier c = new NeuralNetwork(weight_length);
+            parser = new HillClimbParser(c, weight_length, restart, prune);
+
+        }
         else {
             Classifier c = new MultiClassPerceptron(RoleDict.roledict.size(), weight_length);
             parser = new BaseParser(c, weight_length, prune);
@@ -43,8 +49,9 @@ final public class Trainer {
     }
 
     final public void train(){
-        if (!"hill".equals(parser_name)) parser.train(sentencelist);
-        else parser.trainSecond(sentencelist);
+        if ("hill".equals(parser_name)) parser.trainSecond(sentencelist);
+        else if ("nn".equals(parser_name)) parser.trainNN(sentencelist);
+        else parser.train(sentencelist);
     }
 
 }

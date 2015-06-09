@@ -19,13 +19,14 @@ public class NeuralNetwork extends Classifier{
     Matrix h;//j*1
     double y;
     final Random rnd = new Random(0);
-    final double alpha = 0.001d;
+    final double alpha = 0.01d;
     
     public NeuralNetwork(final int weight_length) {
-        w_ji = initialize(Matrix.random(weight_length*5, weight_length*5));
-        w_kj = initialize(Matrix.random(1, weight_length*5));
+        w_ji = initialize(Matrix.random(weight_length*3, weight_length*3));
+        w_kj = initialize(Matrix.random(1, weight_length*3));
     }
     
+    @Override
     public double forward(final Matrix x) {
         final Matrix in_j = w_ji.times(x);
         h = relu(in_j);
@@ -34,6 +35,7 @@ public class NeuralNetwork extends Classifier{
         return y;
     }
     
+    @Override
     public void backpropagation(final int o_tag, final Matrix x) {
         final Matrix delta_y = delta_y(o_tag);
         final Matrix derivative_kj = derivative_kj(delta_y, h);
@@ -42,14 +44,8 @@ public class NeuralNetwork extends Classifier{
     }
     
     public Matrix delta_y (final int o_tag) {
-        final Matrix error = new Matrix(y.length, 1);
-        for (int k=0; k<y.length; ++k) {
-            final double e;
-            if (k==o_tag) e = y[k] - 1.0;
-            else e = y[k];
-
-            error.set(k, 0, e);
-        }
+        final Matrix error = new Matrix(1, 1);
+        error.set(0, 0, y-o_tag);
         return error;
     }
     
