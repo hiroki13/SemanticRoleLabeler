@@ -16,45 +16,46 @@ import java.util.Random;
 public class NeuralNetwork extends Classifier{
     final Matrix w_ji;
     final Matrix w_kj;
-    Matrix h;//j*1
-    double y;
+//    double y;
     final Random rnd = new Random(0);
-    final double alpha = 0.01d;
+    final double alpha = 0.075d;
     
     public NeuralNetwork(final int weight_length) {
-        w_ji = initialize(Matrix.random(weight_length*3, weight_length*3));
-        w_kj = initialize(Matrix.random(1, weight_length*3));
+//        w_ji = initialize(Matrix.random(weight_length*5, weight_length*3));
+//        w_kj = initialize(Matrix.random(1, weight_length*5));
+        w_ji = initialize(weight_length*3, weight_length*3);
+        w_kj = initialize(1, weight_length*3);
     }
     
     @Override
     public double forward(final Matrix x) {
         final Matrix in_j = w_ji.times(x);
         h = relu(in_j);
-        final Matrix in_k = w_kj.times(h);
-        y = sigmoid(in_k).get(0, 0);
+        final Matrix in_k = w_kj.times(h);//1 * 1
+        double y = sigmoid(in_k).get(0, 0);
         return y;
     }
     
     @Override
-    public void backpropagation(final int o_tag, final Matrix x) {
-        final Matrix delta_y = delta_y(o_tag);
+    public void backpropagation(final int o_tag, final double prob, final Matrix h, final Matrix x) {
+        final Matrix delta_y = delta_y(o_tag, prob);
         final Matrix derivative_kj = derivative_kj(delta_y, h);
-        final Matrix derivative_ji = derivative_ji(delta_y, x);
+        final Matrix derivative_ji = derivative_ji(delta_y, h, x);
         update(derivative_kj, derivative_ji);
     }
     
-    public Matrix delta_y (final int o_tag) {
+    public Matrix delta_y (final int o_tag, final double prob) {
         final Matrix error = new Matrix(1, 1);
-        error.set(0, 0, y-o_tag);
+        error.set(0, 0, prob-o_tag);
         return error;
     }
     
     public Matrix derivative_kj(final Matrix delta_y, final Matrix h) {
-        // error = k*1, h = j*1,
+        // error = 1*1, h = j*1,
         return delta_y.times(h.transpose());
     }
     
-    public Matrix derivative_ji(final Matrix delta_y, final Matrix x) {
+    public Matrix derivative_ji(final Matrix delta_y, final Matrix h, final Matrix x) {
         // w_ij = j * i
         final Matrix derivative = new Matrix(w_ji.getRowDimension(), w_ji.getColumnDimension());
         // w_jk = 45 * dim of j, error = 45 * 1, error_j = dim of j * 1
@@ -149,15 +150,6 @@ public class NeuralNetwork extends Classifier{
         return z;
     }
     
-    final public double[][] matrix(final int w1, final int w2) {
-        final double[][] matrix = new double[w1][w2];
-        for (int i=0; i<w1; ++i) {
-            for (int j=0; j<w2; ++j)
-                matrix[i][j] = rnd.nextDouble() - 0.5;
-        }
-        return matrix;
-    }    
-    
     final public Matrix initialize(final Matrix x) {
         for (int i=0; i<x.getRowDimension(); ++i) {
             for (int j=0; j<x.getColumnDimension(); ++j)
@@ -166,4 +158,12 @@ public class NeuralNetwork extends Classifier{
         return x;
     }        
     
+    final public Matrix initialize(final int d1, final int d2) {
+        final double[][] matrix = new double[d1][d2];
+        for (int i=0; i<d1; ++i) {
+            for (int j=0; j<d2; ++j)
+                matrix[i][j] = rnd.nextDouble() - 0.5;
+        }
+        return new Matrix(matrix);
+    }        
 }

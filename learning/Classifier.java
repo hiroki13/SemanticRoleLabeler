@@ -15,6 +15,7 @@ public class Classifier {
 
     public float[][] weight;
     public float[][] aweight;
+    public Matrix h;//j*1
     public float t = 1.0f;
 
     public Classifier() {}
@@ -32,4 +33,7 @@ public class Classifier {
     }
     
     public void backpropagation(final int o_tag, final Matrix x) {}
+    
+    public void backpropagation(final int o_tag, final double prob, final Matrix h, final Matrix x) {}
+    
 }

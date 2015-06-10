@@ -30,6 +30,7 @@ public class ParameterChecker {
             setTestFile();
             setEvalFile();
             setOutputFile();
+            setEmbedFile();
             
             if (!isParser(parserselect)) {
                 System.out.println("Enter -parser base/hill/nn");
@@ -41,6 +42,7 @@ public class ParameterChecker {
             setTestFile();
             setModelFile();
             setOutputFile();
+            setEmbedFile();
             
             if (!isParser(parserselect)) {
                 System.out.println("Enter -parser base/hill/nn");
@@ -90,6 +92,14 @@ public class ParameterChecker {
         }        
     }
 
+    final public void setEmbedFile() {
+        if(mode.embeddings) mode.embedfile = optionparser.getString("embeddings");
+        else {
+            System.out.println("Enter -embeddings filename");
+            System.exit(0);
+        }        
+    }
+    
 /*    
     final public void setFrameFile() {
         if(mode.frame) mode.framefile = optionparser.getString("frame");

@@ -60,8 +60,8 @@ public class FeatureExtractor {
         for (int i=0; i<input_args.length; ++i) {
             final int arg_i = input_args[i];
             final double[] vec;
-            if (arg_i > -1) vec = tokens.get(prd.arguments.get(arg_i)).vec;
-            else vec = LookupTable.get("NULL");
+            if (arg_i > -1 && arg_i < prd.arguments.size()) vec = tokens.get(prd.arguments.get(arg_i)).vec;
+            else vec = LookupTable.get("*UNKNOWN*");
             for (int j=0; j<weight_size; ++j) f_vector[j+weight_size*(i+1)] = vec[j];
         }
         
@@ -71,9 +71,9 @@ public class FeatureExtractor {
     final private int[] inputArgs(final int[] graph) {
         final int[] input = new int[2];
         for (int i=0; i<input.length; ++i) input[i] = -1;
-        for (int i=0; i<graph.length; ++i) {
-            if (graph[i] == 1) input[0] = i;
-            else if (graph[i] == 2) input [1] = i;
+        for (int arg_i=0; arg_i<graph.length; ++arg_i) {
+            final int role = graph[arg_i];
+            if (role > 0) input[role-1] = arg_i;
         }
         return input;
     }

@@ -28,7 +28,7 @@ public class Mode {
     public OptionParser optionparser;
     public String modeselect, parserselect;    
     public String trainfile, testfile, evalfile, outfile, modelfile, framefile, embedfile;
-    public boolean train, test, eval, output, model, frame, check_accuracy, pd, ai, ac, core;
+    public boolean train, test, eval, output, model, frame, embeddings, check_accuracy, pd, ai, ac, core;
     public int iteration, restart, weight_length, prune;
     public ArrayList<Sentence> trainsentence, testsentence, evalsentence;
     
@@ -61,6 +61,7 @@ public class Mode {
         eval = optionparser.isExsist("eval");
         output = optionparser.isExsist("output");
         model = optionparser.isExsist("model");
+        embeddings = optionparser.isExsist("embeddings");
 //        frame = optionparser.isExsist("frame");
         RoleDict.core = optionparser.isExsist("core");
         check_accuracy = optionparser.isExsist("check");
@@ -80,8 +81,9 @@ public class Mode {
         if ("train".equals(modeselect)) {
             System.out.println("\nFiles Loaded...");
 
-//            if (RoleDict.core && !ac) RoleDict.add("NULL");
+            if (RoleDict.core && !ac) RoleDict.add("NULL");
             
+            iteration = 20;
             weight_length = 50;
             LookupTable.weight_length = 50;
 
@@ -157,7 +159,6 @@ public class Mode {
     
     final private void argumentClassification() throws IOException {
         System.out.println("\nArgument Classifier Learning START");
-        restart = 1;
         final Trainer trainer = new Trainer(trainsentence, parserselect, weight_length, restart, prune);
 
         iteration = 50;
