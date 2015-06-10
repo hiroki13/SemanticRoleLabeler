@@ -44,7 +44,7 @@ final public class AccuracyChecker {
         }
         else if ("nn".equals(p_name)) {
             parser = p;
-            parser.testNN(testsentencelist);
+            parser.test(testsentencelist);
         }
         else {
             final Classifier c = new MultiClassPerceptron(RoleDict.roledict.size(), p.weight_length);

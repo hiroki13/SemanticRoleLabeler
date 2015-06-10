@@ -39,7 +39,7 @@ final public class Trainer {
         }
         else if ("nn".equals(p_name)) {
             Classifier c = new NeuralNetwork(weight_length);
-            parser = new HillClimbParser(c, weight_length, restart, prune);
+            parser = new NeuralParser(c, weight_length, restart, prune);
 
         }
         else {
@@ -50,7 +50,7 @@ final public class Trainer {
 
     final public void train(){
         if ("hill".equals(parser_name)) parser.trainSecond(sentencelist);
-        else if ("nn".equals(parser_name)) parser.trainNN(sentencelist);
+        else if ("nn".equals(parser_name)) parser.train(sentencelist);
         else parser.train(sentencelist);
     }
 
