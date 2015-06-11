@@ -19,7 +19,13 @@ import learning.Classifier;
  * @author hiroki
  */
 public class NeuralParser extends Parser{
-
+        
+    final ArrayList<Integer> proposition;
+    final int prop_length;
+    int arg_length;
+//    double best_score;
+//    Matrix best_h, best_feature;
+    
     public NeuralParser(final Classifier c, final int weight_length, final int restart, final int prune) {
         this.classifier = c;
         this.weight_length = weight_length;
@@ -27,6 +33,8 @@ public class NeuralParser extends Parser{
         this.rnd = new Random();
         this.restart = restart;
         this.prune = prune;
+        this.proposition = RoleDict.rolearray;
+        this.prop_length = proposition.size();
     }
     
     @Override
@@ -40,22 +48,33 @@ public class NeuralParser extends Parser{
             if (sentence.preds.length == 0) continue;
             if (checkArguments(sentence)) continue;
 
-            final int[][] best_graph = decodePerPAS2(sentence);
+            train(sentence);
             
-            checkAccuracy(sentence.o_graph, best_graph);
-
-            if (i%100 == 0 && i != 0) {
-                System.out.print(String.format("%d ", i));
-            }
-            
-            if (i==prune) break;
-            
+            if (i%100 == 0 && i != 0) System.out.print(String.format("%d ", i));            
+            if (i==prune) break;            
         }
         
         System.out.println("\n\tCorrect: " + correct);                        
         System.out.println("\tTotal: " + total);                        
         System.out.println("\tAccuracy: " + correct/total);
     }
+    
+    final private void train(final Sentence sentence) {
+        for (int prd_i=0; prd_i<sentence.preds.length; ++prd_i) {
+            final Graph graph = decode(sentence, prd_i);
+            checkAccuracy(sentence.o_graph[prd_i], graph.graph);
+            
+            final Graph o_g = new Graph();
+            o_g.graph = copyGraph(sentence.o_graph[prd_i]);
+            o_g.feature = new Matrix(lookupFeature(sentence, o_g.graph, prd_i), weight_length*(2*RoleDict.size()+1));
+            o_g.score = classifier.forward(o_g.feature);
+            o_g.h = copyMatrix(classifier.h);
+            
+            updateWeights(sentence.o_graph[prd_i], graph.graph, graph.score, graph.h, graph.feature);
+            if (checkLabel(o_g.graph, graph.graph) == 0)
+                updateWeights(o_g.graph, o_g.graph, o_g.score, o_g.h, o_g.feature);
+        }
+    }    
     
     @Override
     final public void test(final ArrayList<Sentence> testsentencelist) {
@@ -67,11 +86,16 @@ public class NeuralParser extends Parser{
             if (sentence.preds.length == 0) continue;
             if (checkArguments(sentence)) continue;
 
-            long time1 = System.currentTimeMillis();
-            sentence.p_graph = decodePerPAS(sentence);
-            long time2 = System.currentTimeMillis();
+            sentence.p_graph = new int[sentence.preds.length][];
+            
+            for (int prd_i=0; prd_i<sentence.preds.length; ++prd_i) {
+                long time1 = System.currentTimeMillis();
+                final Graph g = decode(sentence, prd_i);
+                sentence.p_graph[prd_i] = g.graph;
+                long time2 = System.currentTimeMillis();
 
-            time += time2 - time1;
+                time += time2 - time1;
+            }
             
             if (i%100 == 0 && i != 0) {
                 System.out.print(String.format("%d ", i));
@@ -93,54 +117,19 @@ public class NeuralParser extends Parser{
 
             if (testsentence.preds.length == 0) continue;
 
-            final ArrayList<Token> o_tokens = evalsentence.tokens;
-            final ArrayList<Token> tokens = testsentence.tokens;
-
             final int[][] o_graph = evalsentence.o_graph;
             final int[][] p_graph = testsentence.p_graph;
-                        
-            if (p_graph == null && o_graph != null) {
-                for (int j=0; j<o_graph.length; ++j) {
-                    final ArrayList<Integer> o_arguments = o_tokens.get(evalsentence.preds[j]).arguments;
-//                    r_total += o_arguments.size();
-                }
-                continue;
-            }
-            else if (o_graph == null && p_graph != null) {
-                for (int j=0; j<p_graph.length; ++j) {
-                    final ArrayList<Integer> p_arguments = tokens.get(testsentence.preds[j]).arguments;
-//                    p_total += p_arguments.size();
-                }
-                continue;
-            }
-            else if (o_graph == null && p_graph == null) {
-                continue;
-            }
-            
+
             for (int j=0; j<p_graph.length; ++j) {
-                final int[] p_roles = p_graph[j];
-                final int[] o_roles = o_graph[j];
+                final int[] p_args = p_graph[j];
+                final int[] o_args = o_graph[j];
                 
-                final ArrayList<Integer> arguments = tokens.get(testsentence.preds[j]).arguments;
-                final ArrayList<Integer> o_arguments = o_tokens.get(evalsentence.preds[j]).arguments;                
-//                p_total += arguments.size();
-//                r_total += o_arguments.size();
-                for (int l=0; l<o_roles.length; ++l) {
-                    final int r = o_roles[l];
-                    if (r > 0) r_total += 1;
-                }
-                for (int l=0; l<p_roles.length; ++l) {
-                    final int r = p_roles[l];
-                    if (r > 0) p_total += 1;
-                }
-                
-                for (int k=0; k<arguments.size(); ++k) {
-                    final int arg_id = arguments.get(k);
-                    final int role = p_roles[k];
-                    
-                    if (role == 0) continue;
-                    
-                    if (match(arg_id, role, o_roles, o_arguments)) correct += 1.0f;
+                for (int l=0; l<o_args.length; ++l) {
+                    final int o_arg = o_args[l];
+                    final int p_arg = p_args[l];
+                    if (o_arg > -1) r_total += 1;
+                    if (p_arg > -1) p_total += 1;
+                    if (o_arg == p_arg && o_arg > -1) correct += 1;
                 }
             }            
         }
@@ -167,149 +156,95 @@ public class NeuralParser extends Parser{
         return false;
     }
     
-    final public int[][] decodePerPAS(final Sentence sentence) {
-        final ArrayList<Token> tokens = sentence.tokens;
-        final int[] preds = sentence.preds;
-        final int prds_length = sentence.preds.length;
-        final int max_arg_length = sentence.max_arg_length;
-        final ArrayList<Integer> proposition = RoleDict.rolearray;
-        final int prop_length = proposition.size();
-
-        final int[][] graph = new int[prds_length][max_arg_length];
+    final public Graph decode(final Sentence sentence, final int prd_i) {
+        arg_length = sentence.tokens.get(sentence.preds[prd_i]).arguments.size();
+        Graph best_graph = new Graph();
+        best_graph.score = -1.0d;
 
         for (int i=0; i<restart; ++i) {
-            for (int prd_i=0; prd_i<prds_length; ++prd_i) {
-                final ArrayList<Integer> arguments = tokens.get(preds[prd_i]).arguments;
-                final int arg_length = arguments.size();
-                double best_score = -1.0d;
-
-                if (arg_length == 0) {
-                    graph[prd_i] = new int[]{-1,-1};
-                }
-                else if (arg_length == 1) {
-                    for (int role_i=1; role_i<prop_length; ++role_i) {
-                        final int role1 = proposition.get(role_i);
-                        final int[] tmp_graph = new int[]{role1, -1};
-                        final double score = getPASScore(sentence, tmp_graph, prd_i);                            
-
-                        if (score > best_score) {
-                            best_score = score;
-                            graph[prd_i] = tmp_graph;
-                        }
-                    }
-                }
-                else {
-                    for (int role_i=1; role_i<prop_length; ++role_i) {
-                        final int role1 = proposition.get(role_i);                        
-
-                        for (int role_j=1; role_j<prop_length; ++role_j) {
-//                            if (role_i == 0 && role_j > 0) break;
-                            if (role_i == role_j) continue;
-                            
-                            final int role2 = proposition.get(role_j);
-                            final int[] tmp_graph = new int[]{role1, role2};
-
-                            final double score = getPASScore(sentence, tmp_graph, prd_i);                            
-
-                            if (score > best_score) {
-                                best_score = score;
-                                graph[prd_i] = tmp_graph;
-                            }
-                        }
-                    }
-                }
+            Graph graph = new Graph();
+            graph.graph = new int[prop_length];
+            
+            while(true) {
+                int[] prev_graph = copyGraph(graph.graph);
+//                graph = getBestNeighborGraph(sentence, prev_graph, prd_i);
+                graph = getBestNeighborGraph2(sentence, prev_graph, prd_i);
+                if (match(prev_graph, graph.graph)) break;
+            }
+            if (graph.score > best_graph.score) {
+                best_graph.graph = copyGraph(graph.graph);
+                best_graph.score = graph.score;
+                best_graph.h = copyMatrix(graph.h);
+                best_graph.feature = copyMatrix(graph.feature);
             }
         }
         
-        return graph;
+        return best_graph;
+    }
+    
+    final private boolean match(final int[] graph1, final int[] graph2) {
+        for (int i=0; i<graph1.length; ++i) if (graph1[i] != graph2[i]) return false;
+        return true;
     }
 
-    final public int[][] decodePerPAS2(final Sentence sentence) {
-        final ArrayList<Token> tokens = sentence.tokens;
-        final int[] preds = sentence.preds;
-        final int prds_length = sentence.preds.length;
-        final int max_arg_length = sentence.max_arg_length;
-        final ArrayList<Integer> proposition = RoleDict.rolearray;
-        final int prop_length = proposition.size();
+    final private Graph getBestNeighborGraph(final Sentence sentence, final int[] graph, final int prd_i) {
+        Graph g = new Graph();
+        g.score = -1.0d;
+        
+        for (int arg_i=-1; arg_i<arg_length; ++arg_i) {            
+            for (int role_i=0; role_i<prop_length; ++role_i) {
+                final int role = proposition.get(role_i);
+                final int[] tmp_graph = changeGraph(graph, arg_i, role);                
+                final Matrix feature = new Matrix(lookupFeature(sentence, tmp_graph, prd_i), weight_length*(2*RoleDict.size()+1));                
+                final double score = classifier.forward(feature);
+                
+                if (score > g.score) {                
+                    g.score = score;                                            
+                    g.feature = copyMatrix(feature);                                            
+                    g.h = copyMatrix(classifier.h);                                            
+                    g.graph = copyGraph(tmp_graph);                    
+                }                                    
+            }                            
+        }
+        return g;
+    }
 
-        final int[][] graph = new int[prds_length][max_arg_length];
-
-        for (int i=0; i<restart; ++i) {
-            for (int prd_i=0; prd_i<prds_length; ++prd_i) {
-                final ArrayList<Integer> arguments = tokens.get(preds[prd_i]).arguments;
-                final int arg_length = arguments.size();
-                double best_score = -1.0d;
-                Matrix best_h = new Matrix(1,1);
-                Matrix best_feature = new Matrix(1,1);
-
-                if (arg_length == 0) {
-                    graph[prd_i] = new int[]{-1,-1};
-                    final Matrix feature = new Matrix(lookupFeature(sentence, graph[prd_i], prd_i), weight_length*3);
-                    best_feature = feature;
-                    best_h = copyMatrix(classifier.h);
-                    best_score = classifier.forward(feature);
-                }
-                else if (arg_length == 1) {
-                    for (int role_i=1; role_i<prop_length; ++role_i) {
-                        final int role1 = proposition.get(role_i);
-                        final int[] tmp_graph = new int[]{role1, -1};
-
-                        final Matrix feature = new Matrix(lookupFeature(sentence, tmp_graph, prd_i), weight_length*3);                        
-                        final double score = classifier.forward(feature);
-//                        final double score = getPASScore(sentence, tmp_graph, prd_i);                            
-
-                        if (score > best_score) {
-                            best_score = score;
-                            best_feature = feature;
-                            best_h = copyMatrix(classifier.h);
-                            graph[prd_i] = tmp_graph;
-                        }
-                    }
-                }
-                else {
-                    for (int role_i=1; role_i<prop_length; ++role_i) {
-                        final int role1 = proposition.get(role_i);                        
-
-                        for (int role_j=1; role_j<prop_length; ++role_j) {
-//                            if (role_i == 0 && role_j > 0) break;
-                            if (role_i == role_j) continue;
-                            
-                            final int role2 = proposition.get(role_j);
-                            final int[] tmp_graph = new int[]{role1, role2};
-
-                            final Matrix feature = new Matrix(lookupFeature(sentence, tmp_graph, prd_i), weight_length*3);
-                            final double score = classifier.forward(feature);
-//                            final double score = getPASScore(sentence, tmp_graph, prd_i);                            
-
-                            if (score > best_score) {
-                                best_score = score;
-                                best_feature = feature;
-                                best_h = copyMatrix(classifier.h);
-                                graph[prd_i] = tmp_graph;
-                            }
-                        }
-                    }
-                }
-//                updateWeights(sentence, sentence.o_graph[prd_i], graph[prd_i], prd_i);
-                updateWeights(sentence.o_graph[prd_i], graph[prd_i], best_score, best_h, best_feature);
+    final private Graph getBestNeighborGraph2(final Sentence sentence, final int[] graph, final int prd_i) {
+        Graph g = new Graph();
+        g.score = -1.0d;
+        
+        for (int arg_i=-1; arg_i<arg_length; ++arg_i) {            
+        for (int arg_j=-1; arg_j<arg_length; ++arg_j) {            
+                final int[] tmp_graph = new int[]{arg_i, arg_j};
+                final Matrix feature = new Matrix(lookupFeature(sentence, tmp_graph, prd_i), weight_length*(2*RoleDict.size()+1));                
+                final double score = classifier.forward(feature);
+                
+                if (score > g.score) {                
+                    g.score = score;                                            
+                    g.feature = copyMatrix(feature);                                            
+                    g.h = copyMatrix(classifier.h);                                            
+                    g.graph = copyGraph(tmp_graph);                    
+                }                                    
             }
         }
-        
-        return graph;
+        return g;
     }
-
-    final private ArrayList<Integer>[] setPropositions(final Sentence sentence) {
-        final ArrayList<Integer>[] preds = new ArrayList[sentence.preds.length];
-        
-        for (int i=0; i<sentence.preds.length; ++i) {
-            preds[i] = RoleDict.rolearray;
-        }
-        
-        return preds;
+    
+    final private int[] copyGraph(final int[] graph) {
+        final int[] copied_graph = new int[graph.length];
+        for (int i=0; i<copied_graph.length; ++i) copied_graph[i] = graph[i];
+        return copied_graph;        
     }
-
+    
+    final private int[] changeGraph(final int[] graph, final int arg_i, final int role) {
+        final int[] copied_graph = new int[graph.length];
+        for (int i=0; i<copied_graph.length; ++i) copied_graph[i] = graph[i];
+        copied_graph[role] = arg_i;        
+        return copied_graph;
+    }
+    
     final private double getPASScore(final Sentence sentence, final int[] graph, final int prd_i) {
-        final Matrix x = new Matrix(lookupFeature(sentence, graph, prd_i), weight_length*3);
+        final Matrix x = new Matrix(lookupFeature(sentence, graph, prd_i), weight_length*(RoleDict.size()+1));
         return classifier.forward(x);
     }
 
@@ -346,6 +281,13 @@ public class NeuralParser extends Parser{
                 if (role1 == role2) correct += 1.0f;
                 total += 1.0f;
             }
+        }
+    }
+    
+    final public void checkAccuracy(final int[] o_graph, final int[] graph) {
+        for (int i=0; i<o_graph.length; ++i) {
+            if (o_graph[i] == graph[i]) correct += 1.0f;            
+            total += 1.0f;
         }
     }
     

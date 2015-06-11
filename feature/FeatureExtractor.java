@@ -6,6 +6,8 @@
 package feature;
 
 import io.LookupTable;
+import io.PathLookupTable;
+import io.RoleDict;
 import io.Sentence;
 import io.Token;
 import java.util.ArrayList;
@@ -15,15 +17,16 @@ import java.util.ArrayList;
  * @author hiroki
  */
 public class FeatureExtractor {
-    final int weight_size;
+    final int weight_size, role_size;
     int k;
     int total;
     public ArrayList<String[][][]> g_cache;
     public ArrayList<String[][][][][]> second_cache;
-    public ArrayList<String[][]> pd_cache;
+    public ArrayList<String[][]> pd_cache;    
     
     public FeatureExtractor(final int weight_size) {
         this.weight_size = weight_size;
+        this.role_size = RoleDict.rolearray.size();
         this.g_cache = new ArrayList();
     }
 
@@ -49,27 +52,36 @@ public class FeatureExtractor {
     }
 
     final public double[] lookupFeature(final Sentence sentence, final int[] graph, final int prd_i) {        
-        final double[] f_vector = new double[3*weight_size];
+        final double[] f_vector = new double[weight_size*(2*role_size+1)];
         final ArrayList<Token> tokens = sentence.tokens;
         final Token prd = tokens.get(sentence.preds[prd_i]);
-        final int[] input_args = inputArgs(graph);
+//        final int[] input_args = inputArgs(graph);
+        final int[] input_args = graph;
 
         final double[] prd_vec = prd.vec;
         for (int i=0; i<weight_size; ++i) f_vector[i] = prd_vec[i];
                 
-        for (int i=0; i<input_args.length; ++i) {
-            final int arg_i = input_args[i];
+        for (int role=0; role<input_args.length; ++role) {
+            final int arg_i = input_args[role];
             final double[] vec;
-            if (arg_i > -1 && arg_i < prd.arguments.size()) vec = tokens.get(prd.arguments.get(arg_i)).vec;
+            final double[] path_vec;
+
+            if (arg_i > -1) vec = tokens.get(prd.arguments.get(arg_i)).vec;
             else vec = LookupTable.get("*UNKNOWN*");
-            for (int j=0; j<weight_size; ++j) f_vector[j+weight_size*(i+1)] = vec[j];
+
+            if (arg_i > -1) path_vec = PathLookupTable.get(sentence.dep_path[prd_i][prd.arguments.get(arg_i)]);
+            else path_vec = PathLookupTable.get("NULL");
+
+//            for (int j=0; j<weight_size; ++j) f_vector[j+weight_size*(role+1)] = vec[j];
+            for (int j=0; j<weight_size; ++j) f_vector[j+weight_size*(2*role+1)] = vec[j];
+            for (int j=0; j<weight_size; ++j) f_vector[j+weight_size*(2*role+2)] = path_vec[j];
         }
         
         return f_vector;
     }
     
     final private int[] inputArgs(final int[] graph) {
-        final int[] input = new int[2];
+        final int[] input = new int[role_size];
         for (int i=0; i<input.length; ++i) input[i] = -1;
         for (int arg_i=0; arg_i<graph.length; ++arg_i) {
             final int role = graph[arg_i];
@@ -78,7 +90,7 @@ public class FeatureExtractor {
         return input;
     }
     
-    
+        
     final public String[] instantiateFirstOrdFeature(final Sentence sentence,
                                                         final int prd_i,
                                                         final int arg_i) {

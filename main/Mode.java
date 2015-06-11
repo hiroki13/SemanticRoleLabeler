@@ -14,6 +14,7 @@ import io.FrameDict;
 import io.LookupTable;
 import io.OptionParser;
 import io.ParameterChecker;
+import io.PathLookupTable;
 import io.Reader;
 import io.RoleDict;
 import io.Sentence;
@@ -78,7 +79,30 @@ public class Mode {
         System.out.println("\nSemantic Role Labeling START");        
         System.out.println("PARSER: " + parserselect);        
 
-        if ("train".equals(modeselect)) {
+        if ("train".equals(modeselect) && "nn".equals(parserselect)) {
+            System.out.println("\nFiles Loaded...");
+
+//            RoleDict.add("NULL");            
+            LookupTable.weight_length = 50;
+
+            if (embedfile != null) Reader.embeddings(embedfile);
+
+            trainsentence = Reader.read_nn(trainfile, false);
+            testsentence = Reader.read_nn(testfile, true);
+            evalsentence = Reader.read(evalfile);
+            
+            System.out.println(String.format("Train Sents: %d\nTest Sents: %d", trainsentence.size(), testsentence.size()));
+            
+            ArrayList a = RoleDict.roledict;
+            
+            System.out.println("Framedict: " + FrameDict.framedict.size());
+            System.out.println("Roles: " + RoleDict.roledict.size());
+            
+            predicateDisambiguation();            
+            argumentClassification();
+            
+        }
+        else if ("train".equals(modeselect)) {
             System.out.println("\nFiles Loaded...");
 
             if (RoleDict.core && !ac) RoleDict.add("NULL");
@@ -130,6 +154,8 @@ public class Mode {
         System.out.println("\nPredicate Disambiguator Learning START");        
         PredicateDisambiguator pd = new PredicateDisambiguator(weight_length);
 
+        iteration = 20;        
+        
         for (int i=0; i<iteration; ++i) {        
             System.out.println("\nIteration: " + (i+1));            
             pd.train(trainsentence);            
@@ -159,16 +185,18 @@ public class Mode {
     
     final private void argumentClassification() throws IOException {
         System.out.println("\nArgument Classifier Learning START");
+        weight_length = 50;
+        PathLookupTable.weight_length = 50;
         final Trainer trainer = new Trainer(trainsentence, parserselect, weight_length, restart, prune);
 
-        iteration = 50;
+        iteration = 200;
         for (int i=0; i<iteration; ++i) {        
             System.out.println("\nIteration: " + (i+1));            
             trainer.train();            
             System.out.println();            
 
-            AccuracyChecker checker = new AccuracyChecker();
-            checker.test(testsentence, evalsentence, trainer.parser, parserselect);
+//            AccuracyChecker checker = new AccuracyChecker();
+//            checker.test(testsentence, evalsentence, trainer.parser, parserselect);
         }        
     }
     

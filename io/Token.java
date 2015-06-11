@@ -43,7 +43,9 @@ public class Token {
     final public ArrayList<String> rightsiblingw;
     final public ArrayList<String> leftsiblingpos;
     final public ArrayList<String> rightsiblingpos;    
+
     public ArrayList<Integer> arguments;
+    public int[] o_arguments;
 
     
     public Token(final String[] line, final boolean test) {
@@ -81,39 +83,6 @@ public class Token {
         arguments = new ArrayList<>();
     }
 
-/*    
-    final private int getRolesetID(String line) {
-        if (!"_".equals(line)) {
-            final String[] tmp = line.split("\\.");
-            String pred_lemma = tmp[0];
-            int tmp_roleset = Integer.parseInt(tmp[1]);
-            
-            int roleset;
-
-            if (!RolesetDict.rolesetdict.containsKey(lemma)) {
-
-                if (RolesetDict.rolesetdict.containsKey(pred_lemma)) {
-                    HashMap tmp_rolesetdict = RolesetDict.get(pred_lemma);
-                    RolesetDict.put(lemma, tmp_rolesetdict);
-
-                    HashMap tmp_framedict = FrameDict.get(pred_lemma);
-                    FrameDict.put(lemma, tmp_framedict);
-                }
-
-                roleset = RolesetDict.get(lemma, tmp_roleset);
-                FrameDict.put(lemma, roleset);                
-            }
-            else {
-                roleset = RolesetDict.get(lemma, tmp_roleset);
-            }
-            
-            return roleset;
-        }
-        else
-            return -1;        
-    }
-*/    
-
     final private int[] setApred(final String[] line, final boolean test) {
         final int[] apred = new int[line.length-14];
         
@@ -121,9 +90,10 @@ public class Token {
             for (int i=0; i<apred.length; ++i) {
                 if (!"_".equals(line[14+i])) {
                     final int role = RoleDict.addAndGet(line[14+i]);
-                    if (!RoleDict.core) apred[i] = role;
+                    apred[i] = role;
+/*                    if (!RoleDict.core) apred[i] = role;
                     else if (role > 0) apred[i] = role;
-                    else apred[i] = -1;
+                    else apred[i] = -1;*/
 //                    else apred[i] = role;
                 }
                 else apred[i] = -1;

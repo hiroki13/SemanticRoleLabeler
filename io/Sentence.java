@@ -196,6 +196,18 @@ public class Sentence {
         
     }
 
+    final void setAllCandidateArguments() {
+        for (int i=0; i<this.preds.length; ++i) {    
+            final Token pred = tokens.get(preds[i]);
+            
+            for (int j=1; j<this.size(); ++j) {
+                final Token arg = tokens.get(j);
+                pred.arguments.add(arg.id);
+            }
+        }
+        
+    }
+
     
     final void setOracleGraph() {
         o_graph = new int[this.preds.length][max_arg_length];
@@ -214,6 +226,28 @@ public class Sentence {
                 }
                 else
                     tmp_graph[j] = -1;
+            }
+        }
+    }
+
+    final void setOraclePropGraph() {
+        o_graph = new int[this.preds.length][RoleDict.rolearray.size()];
+
+        for (int prd_i=0; prd_i<this.preds.length; ++prd_i) {
+            final Token pred = this.tokens.get(this.preds[prd_i]);
+            final int[] tmp_graph = o_graph[prd_i];
+            
+            for (int i=0; i<tmp_graph.length; ++i) tmp_graph[i] = -1;
+            
+            final ArrayList<Integer> arguments = pred.arguments;
+            final int arg_length = arguments.size();
+
+            for (int i=0; i<arg_length; ++i) {            
+                final int arg_i = arguments.get(i);                                    
+                final Token arg = tokens.get(arg_i);                
+                final int role = arg.apred[prd_i];                                    
+
+                if (role > -1) tmp_graph[role] = arg_i;                
             }
         }
     }

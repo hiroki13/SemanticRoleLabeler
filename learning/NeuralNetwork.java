@@ -6,6 +6,7 @@
 package learning;
 
 import Jama.Matrix;
+import io.RoleDict;
 import static java.lang.Math.exp;
 import java.util.Random;
 
@@ -23,8 +24,8 @@ public class NeuralNetwork extends Classifier{
     public NeuralNetwork(final int weight_length) {
 //        w_ji = initialize(Matrix.random(weight_length*5, weight_length*3));
 //        w_kj = initialize(Matrix.random(1, weight_length*5));
-        w_ji = initialize(weight_length*3, weight_length*3);
-        w_kj = initialize(1, weight_length*3);
+        w_ji = initialize(weight_length*5, weight_length*(2*RoleDict.size()+1));
+        w_kj = initialize(1, weight_length*5);
     }
     
     @Override
