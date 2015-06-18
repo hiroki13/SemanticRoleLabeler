@@ -6,6 +6,7 @@
 package learning;
 
 import Jama.Matrix;
+import io.Sentence;
 
 /**
  *
@@ -34,6 +35,29 @@ public class Classifier {
     
     public void backpropagation(final int o_tag, final Matrix x) {}
     
-    public void backpropagation(final int o_tag, final double prob, final Matrix h, final Matrix x) {}
+//    public void backpropagation(final int o_tag, final double prob, final Matrix h, final Matrix x) {}
+
+    public void backpropagation(final double o_tag, final double prob, final Matrix h, final Matrix x) {}
+
+    public Matrix delta_y (final double o_tag, final double prob) {
+        return new Matrix(1,1);
+    }
     
+    public Matrix derivative_kj(final Matrix delta_y, final Matrix h) {
+        return new Matrix(1,1);
+    }
+
+    public Matrix derivative_ji(final Matrix delta_y, final Matrix h, final Matrix x) {
+        return new Matrix(1,1);
+    }
+    
+    public Matrix derivative_x (final Matrix delta_y, final Matrix h) {
+        return new Matrix(1,1);
+    }
+    
+    public void update(final Matrix derivative_kj, final Matrix derivative_ji) {}
+
+    public void update(final Sentence sentence, final int[] graph, final int prd_i,
+                        final Matrix h, final Matrix derivative_x, final Matrix x) {}
+        
 }

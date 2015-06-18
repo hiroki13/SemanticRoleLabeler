@@ -89,7 +89,7 @@ public class Mode {
 
             trainsentence = Reader.read_nn(trainfile, false);
             testsentence = Reader.read_nn(testfile, true);
-            evalsentence = Reader.read(evalfile);
+            evalsentence = Reader.read_nn(evalfile);
             
             System.out.println(String.format("Train Sents: %d\nTest Sents: %d", trainsentence.size(), testsentence.size()));
             

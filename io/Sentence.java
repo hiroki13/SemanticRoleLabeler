@@ -247,7 +247,8 @@ public class Sentence {
                 final Token arg = tokens.get(arg_i);                
                 final int role = arg.apred[prd_i];                                    
 
-                if (role > -1) tmp_graph[role] = arg_i;                
+//                if (role > -1) tmp_graph[role] = arg_i;                
+                if (role > -1) tmp_graph[role] = i;                
             }
         }
     }

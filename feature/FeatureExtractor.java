@@ -53,12 +53,14 @@ public class FeatureExtractor {
 
     final public double[] lookupFeature(final Sentence sentence, final int[] graph, final int prd_i) {        
         final double[] f_vector = new double[weight_size*(2*role_size+1)];
+//        final double[] f_vector = new double[weight_size*(role_size+1)];
         final ArrayList<Token> tokens = sentence.tokens;
         final Token prd = tokens.get(sentence.preds[prd_i]);
 //        final int[] input_args = inputArgs(graph);
         final int[] input_args = graph;
 
-        final double[] prd_vec = prd.vec;
+//        final double[] prd_vec = prd.vec;
+        final double[] prd_vec = LookupTable.get(prd.form);
         for (int i=0; i<weight_size; ++i) f_vector[i] = prd_vec[i];
                 
         for (int role=0; role<input_args.length; ++role) {
@@ -66,10 +68,12 @@ public class FeatureExtractor {
             final double[] vec;
             final double[] path_vec;
 
-            if (arg_i > -1) vec = tokens.get(prd.arguments.get(arg_i)).vec;
+//            if (arg_i > -1) vec = tokens.get(prd.arguments.get(arg_i)).vec;
+            if (arg_i > -1) vec = LookupTable.get(tokens.get(prd.arguments.get(arg_i)).form);
             else vec = LookupTable.get("*UNKNOWN*");
 
             if (arg_i > -1) path_vec = PathLookupTable.get(sentence.dep_path[prd_i][prd.arguments.get(arg_i)]);
+//            if (arg_i > -1) path_vec = PathLookupTable.get(sentence.dep_r_path[prd_i][prd.arguments.get(arg_i)]);
             else path_vec = PathLookupTable.get("NULL");
 
 //            for (int j=0; j<weight_size; ++j) f_vector[j+weight_size*(role+1)] = vec[j];
