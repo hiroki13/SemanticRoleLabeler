@@ -89,6 +89,7 @@ public class Reader {
                     }
                     
                     sentenceList.add(sentence);
+                    if (sentenceList.size() == 2) return sentenceList;
                     sentence = new Sentence(i++);
                     sentence.add(new Token(root, test));
                 }
@@ -222,14 +223,21 @@ public class Reader {
         try(BufferedReader br = new BufferedReader(
                                 new InputStreamReader(
                                 new FileInputStream(fn)))){
+            final String delimiter = " ";
             String line;
             while((line=br.readLine()) != null){
-                String[] split = line.split(" ");
-                String w = split[0];
+                final String[] split = line.split(delimiter);
+                final String w = split[0];
                 final double[] embedding = new double[split.length-1];
+
                 for (int i=1; i<split.length; ++i)
                     embedding[i-1] = Double.valueOf(split[i]);
+                
                 LookupTable.token_dict.put(w, embedding);
+                for (int i=0; i<2; ++i) {
+                    if (i == 0) LookupTable.token_dict_a0.put(w, embedding);
+                    else LookupTable.token_dict_a1.put(w, embedding);
+                }
             }
         }
     }

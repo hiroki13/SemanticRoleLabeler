@@ -14,6 +14,8 @@ import java.util.Random;
  */
 public class LookupTable {
     static public HashMap<String, double[]> token_dict = new HashMap<>();
+    static public HashMap<String, double[]> token_dict_a0 = new HashMap<>();
+    static public HashMap<String, double[]> token_dict_a1 = new HashMap<>();
     static public int weight_length;
     static public Random rnd = new Random(0);
     
@@ -21,6 +23,18 @@ public class LookupTable {
         if (!token_dict.containsKey(token))
             token_dict.put(token, vector());
         return token_dict.get(token);
+    }
+    
+    final static public double[] get2(final String token) {
+        if (!token_dict_a0.containsKey(token))
+            token_dict_a0.put(token, vector());
+        return token_dict_a0.get(token);
+    }
+    
+    final static public double[] get3(final String token) {
+        if (!token_dict_a1.containsKey(token))
+            token_dict_a1.put(token, vector());
+        return token_dict_a1.get(token);
     }
     
     final static public double[] vector() {

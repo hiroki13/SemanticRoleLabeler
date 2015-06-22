@@ -14,6 +14,7 @@ import io.Token;
 import static java.lang.Math.exp;
 import java.util.ArrayList;
 import java.util.Random;
+import semanticrolelabeler.Graph;
 
 /**
  *
@@ -22,22 +23,17 @@ import java.util.Random;
 public class NeuralNetwork extends Classifier{
     final Matrix w_ji;
     final Matrix w_kj;
-//    double y;
     final Random rnd = new Random(0);
     final double alpha = 0.075d;
     final int weight_length;
-//    final double alpha = 0.0075d;
     
     public NeuralNetwork(final int weight_length) {
         this.weight_length = weight_length;
-//        w_ji = initialize(Matrix.random(weight_length*5, weight_length*3));
-//        w_kj = initialize(Matrix.random(1, weight_length*5));
-        w_ji = initialize(weight_length*20, weight_length*(2*RoleDict.size()+1));
-//        w_ji = initialize(weight_length*3, weight_length*(RoleDict.size()+1));
-        w_kj = initialize(1, weight_length*20);
-//        w_kj = initialize(1, weight_length*3);
+//        w_ji = initialize(weight_length*3, weight_length*(2*RoleDict.size()+1));
+        w_ji = initialize(1, weight_length*(2*RoleDict.size()+1));
+        w_kj = initialize(1, weight_length*3);
     }
-    
+/*    
     @Override
     public double forward(final Matrix x) {
         final Matrix in_j = w_ji.times(x);
@@ -47,6 +43,12 @@ public class NeuralNetwork extends Classifier{
 //        double y = in_k.get(0, 0);
         double y = Math.tanh(in_k.get(0, 0));
         return y;
+    }
+*/    
+    @Override
+    public double forward(final Matrix x) {
+        final Matrix d = sigmoid(w_ji.times(x));
+        return d.get(0, 0);
     }
     
     @Override
@@ -109,11 +111,71 @@ public class NeuralNetwork extends Classifier{
         return derivative_x;
     }
     
-    
+/*    
     @Override
     public void update(final Matrix derivative_kj, final Matrix derivative_ji) {
         w_kj.minusEquals(derivative_kj.timesEquals(alpha));
         w_ji.minusEquals(derivative_ji.timesEquals(alpha));
+    }
+*/
+    
+    @Override
+    public void update(final Sentence sentence, final int prd_i, final double delta, final Graph graph) {
+        final Matrix derivative_ji = graph.feature.times(delta).transpose();
+        derivative_ji.timesEquals(alpha);
+
+        final double[] derivative_x = derivative_x(delta).getRowPackedCopy();
+        w_ji.minusEquals(derivative_ji);
+//        updateVector(sentence, prd_i, graph, derivative_x);
+    }
+
+    public Matrix derivative_x(final double delta) {
+        final Matrix derivative_x = w_ji.times(delta);
+        derivative_x.timesEquals(alpha);
+        return derivative_x;
+    }
+        
+    public void updateVector(final Sentence sentence, final int prd_i, final Graph graph, final double[] derivative_x) {
+        final Token prd = sentence.tokens.get(sentence.preds[prd_i]);
+        final double[] phi_vec = graph.feature.getRowPackedCopy();
+        
+        final double[] vec_prd = updatedVector(phi_vec, 0, derivative_x);
+        double[] v = LookupTable.token_dict.get(prd.form);
+        LookupTable.token_dict.put(prd.form, vec_prd);
+        double[] u = LookupTable.token_dict.get(prd.form);
+                
+        for (int role=0; role<graph.graph.length; ++role) {
+            int arg_i = graph.graph[role];
+            
+            final int begin1 = weight_length*(2*role+1);
+            final double[] vec_arg = updatedVector(phi_vec, begin1, derivative_x);
+            
+            final int begin2 = weight_length*(2*role+2);
+            final double[] vec_path = updatedVector(phi_vec, begin2, derivative_x);
+            
+            if (arg_i > -1) {
+                Token arg = sentence.tokens.get(arg_i+1);
+                if (role == 0) LookupTable.token_dict_a0.replace(arg.form, vec_arg);
+                else LookupTable.token_dict_a1.replace(arg.form, vec_arg);
+                PathLookupTable.path_dict.replace(sentence.dep_path[prd_i][arg_i]+"_"+role, vec_path);
+            }
+            else {
+                LookupTable.token_dict.replace("*UNKNOWN*" + role, vec_arg);
+                PathLookupTable.path_dict.replace("NULL_" + role, vec_path);
+            }            
+        }
+    }
+    
+    final private double[] vec_minusEquals(final double[] vec, final double[] x, final int begin) {
+        for (int i=begin; i<begin+weight_length; ++i) vec[i-begin] -= x[i];
+        return vec;
+    }
+    
+    final private double[] updatedVector(final double[] phi_vec, final int begin, final double[] derivative) {
+        double[] vec = new double[weight_length];
+        System.arraycopy(phi_vec, begin, vec, 0, weight_length);        
+        vec = vec_minusEquals(vec, derivative, begin);
+        return vec;
     }
     
     @Override
@@ -122,7 +184,7 @@ public class NeuralNetwork extends Classifier{
         final ArrayList<Token> tokens = sentence.tokens;
         final Token prd = tokens.get(sentence.preds[prd_i]);
 
-        final Matrix vec = x.minusEquals(derivative_x.transpose());
+        final Matrix vec = x.minusEquals(derivative_x.transpose().times(alpha));
             
         double[] tmp_vec = new double[weight_length];
         int k = 0;
@@ -136,16 +198,20 @@ public class NeuralNetwork extends Classifier{
                     LookupTable.token_dict.put(prd.form, tmp_vec);
                 else if (k % 2 == 1) {
                     final int arg_i = graph[role];
-                    if (arg_i > -1) LookupTable.token_dict.put(tokens.get(prd.arguments.get(arg_i)).form, tmp_vec);
-                    else LookupTable.token_dict.put("*UNKNOWN*", tmp_vec);
+                    if (arg_i > -1) {
+                        if (role == 0) LookupTable.token_dict_a0.put(tokens.get(prd.arguments.get(arg_i)).form+role, tmp_vec);
+                        else LookupTable.token_dict_a1.put(tokens.get(prd.arguments.get(arg_i)).form+role, tmp_vec);
+                    }
+                    else LookupTable.token_dict.put("*UNKNOWN*"+role, tmp_vec);
                 }
                 else {
                     final int arg_i = graph[role];
-                    if (arg_i > -1) PathLookupTable.path_dict.put(sentence.dep_r_path[prd_i][prd.arguments.get(arg_i)], tmp_vec);
-                    else PathLookupTable.path_dict.put("NULL", tmp_vec);                    
+                    if (arg_i > -1) PathLookupTable.path_dict.put(sentence.dep_path[prd_i][prd.arguments.get(arg_i)] + role, tmp_vec);
+                    else PathLookupTable.path_dict.put("NULL"+role, tmp_vec);                    
                     role += 1;
                 }
-                k += 1;                                
+                k += 1;
+                tmp_vec = new double[weight_length];
             }
         }
     }
@@ -184,6 +250,17 @@ public class NeuralNetwork extends Classifier{
         for (int j=0; j<x.getRowDimension(); ++j) {
             for (int i=0; i<x.getColumnDimension(); ++i) {            
                 double score = 1.0 / (1.0 + exp(-(x.get(j, i))));
+                x.set(j, i, score);
+            }
+        }   
+        return x;
+    }
+
+/*    
+    public Matrix sigmoid(final Matrix x) {
+        for (int j=0; j<x.getRowDimension(); ++j) {
+            for (int i=0; i<x.getColumnDimension(); ++i) {            
+                double score = 1.0 / (1.0 + exp(-(x.get(j, i))));
                 if (Double.isInfinite(score)) {
                     System.out.println("Inf:" + x.get(j, i));
                     System.exit(0);
@@ -197,7 +274,7 @@ public class NeuralNetwork extends Classifier{
         }   
         return x;
     }
-    
+*/    
     public Matrix relu(final Matrix x) {
         for (int j=0; j<x.getRowDimension(); ++j) {
             for (int i=0; i<x.getColumnDimension(); ++i) {            
@@ -236,7 +313,7 @@ public class NeuralNetwork extends Classifier{
         for (int i=0; i<d1; ++i) {
             for (int j=0; j<d2; ++j)
 //                matrix[i][j] = rnd.nextDouble() - 0.5;
-                matrix[i][j] = (rnd.nextDouble() - 0.5) / 100;
+                matrix[i][j] = (rnd.nextDouble() - 0.5) / 10;
         }
         return new Matrix(matrix);
     }        

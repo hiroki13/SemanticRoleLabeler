@@ -7,6 +7,7 @@ package learning;
 
 import Jama.Matrix;
 import io.Sentence;
+import semanticrolelabeler.Graph;
 
 /**
  *
@@ -59,5 +60,7 @@ public class Classifier {
 
     public void update(final Sentence sentence, final int[] graph, final int prd_i,
                         final Matrix h, final Matrix derivative_x, final Matrix x) {}
-        
+
+    public void update(final Sentence sentence, final int prd_i, final double delta, final Graph graph) {}
+    
 }

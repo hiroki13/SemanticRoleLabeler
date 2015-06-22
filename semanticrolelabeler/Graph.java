@@ -12,9 +12,17 @@ import Jama.Matrix;
  * @author hiroki
  */
 public class Graph {
-    int[] graph;
-    double score;
-    Matrix feature, h;
+    public int[] graph;
+    public double score;
+    public double[] scores;
+    public Matrix feature, h;
+    public Matrix[] features, hs;
     
     public Graph() {}
+    
+    public Graph(final int arg_length) {
+        scores = new double[arg_length];
+        features = new Matrix[arg_length];
+        hs = new Matrix[arg_length];
+    }
 }

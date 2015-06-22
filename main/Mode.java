@@ -186,6 +186,7 @@ public class Mode {
     final private void argumentClassification() throws IOException {
         System.out.println("\nArgument Classifier Learning START");
         weight_length = 50;
+        LookupTable.weight_length = 50;
         PathLookupTable.weight_length = 50;
         final Trainer trainer = new Trainer(trainsentence, parserselect, weight_length, restart, prune);
 
