@@ -62,30 +62,49 @@ public class FeatureExtractor {
                 
         for (int role=0; role<input_args.length; ++role) {
             final int arg_i = input_args[role];
-            final double[] vec;
-            final double[] path_vec;
-
-            if (arg_i > -1) {
-                final String w = tokens.get(prd.arguments.get(arg_i)).form;
-//                vec = LookupTable.get(w);
-                if (role == 0) vec = LookupTable.get2(w);
-                else vec = LookupTable.get3(w);
-            }
-            else {
-                vec = LookupTable.get("*UNKNOWN*" + role);
-            }
-
-            if (arg_i > -1) {
-                final String path = sentence.dep_path[prd_i][prd.arguments.get(arg_i)];
-                path_vec = PathLookupTable.get(path + "_" + role);
-            }
-            else path_vec = PathLookupTable.get("NULL_" + role);
+            final double[] vec = extractArgVector(tokens, prd, arg_i, role);        
+            final double[] path_vec = extractPathVector(sentence, prd, prd_i, arg_i, role);
 
             System.arraycopy(vec, 0, f_vector, weight_size*(2*role+1), vec.length);
             System.arraycopy(path_vec, 0, f_vector, weight_size*(2*role+2), path_vec.length);
         }
         
         return f_vector;
+    }
+    
+    final public double[] lookupFeature(final Sentence sentence, final int prd_i, final int arg_i, final int role) {        
+        final double[] f_vector = new double[weight_size*2];
+        final ArrayList<Token> tokens = sentence.tokens;
+        final Token prd = tokens.get(sentence.preds[prd_i]);
+
+        final double[] vec = extractArgVector(tokens, prd, arg_i, role);
+        final double[] path_vec = extractPathVector(sentence, prd, prd_i, arg_i, role);
+        
+        System.arraycopy(vec, 0, f_vector, 0, vec.length);        
+        System.arraycopy(path_vec, 0, f_vector, vec.length, path_vec.length);
+        
+        return f_vector;
+    }
+    
+    final private double[] extractArgVector(final ArrayList<Token> tokens, final Token prd, final int arg_i, final int role) {
+        if (arg_i > -1) {
+            final String w = tokens.get(prd.arguments.get(arg_i)).form;
+            return extractWordVector(w, role);
+        }
+        return LookupTable.get("*UNKNOWN*" + role);
+    }
+    
+    final private double[] extractPathVector(final Sentence sentence, final Token prd, final int prd_i, final int arg_i, final int role) {
+        if (arg_i > -1) {
+            final String path = sentence.dep_path[prd_i][prd.arguments.get(arg_i)];            
+            return PathLookupTable.get(path + "_" + role);            
+        }
+        return PathLookupTable.get("NULL_" + role);
+    }
+    
+    final private double[] extractWordVector(final String w, final int role) {
+        if (role == 0) return LookupTable.getA0(w);                    
+        return LookupTable.getA1(w);                    
     }
     
 
@@ -129,7 +148,7 @@ public class FeatureExtractor {
         return f_vector;
     }
 */
-    
+/*    
     final public double[] lookupFeature(final Sentence sentence, final int prd_i, final int arg_i, final int role) {        
         final double[] f_vector = new double[weight_size*(2+1)];
         final ArrayList<Token> tokens = sentence.tokens;
@@ -157,7 +176,7 @@ public class FeatureExtractor {
         
         return f_vector;
     }
-    
+*/    
     final private int[] inputArgs(final int[] graph) {
         final int[] input = new int[role_size];
         for (int i=0; i<input.length; ++i) input[i] = -1;

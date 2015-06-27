@@ -10,6 +10,7 @@ import io.RoleDict;
 import io.Sentence;
 import java.util.ArrayList;
 import learning.Classifier;
+import learning.LinearNetwork;
 import learning.MultiClassPerceptron;
 import learning.NeuralNetwork;
 
@@ -39,8 +40,9 @@ final public class Trainer {
         }
         else if ("nn".equals(p_name)) {
             Classifier c = new NeuralNetwork(weight_length);
+//            Classifier c = new LinearNetwork(weight_length);
             parser = new NeuralParser(c, weight_length, restart, prune);
-
+//            parser = new LinearParser(c, weight_length, restart, prune);
         }
         else {
             Classifier c = new MultiClassPerceptron(RoleDict.roledict.size(), weight_length);

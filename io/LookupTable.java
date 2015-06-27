@@ -25,13 +25,13 @@ public class LookupTable {
         return token_dict.get(token);
     }
     
-    final static public double[] get2(final String token) {
+    final static public double[] getA0(final String token) {
         if (!token_dict_a0.containsKey(token))
             token_dict_a0.put(token, vector());
         return token_dict_a0.get(token);
     }
     
-    final static public double[] get3(final String token) {
+    final static public double[] getA1(final String token) {
         if (!token_dict_a1.containsKey(token))
             token_dict_a1.put(token, vector());
         return token_dict_a1.get(token);

@@ -89,7 +89,7 @@ public class Reader {
                     }
                     
                     sentenceList.add(sentence);
-                    if (sentenceList.size() == 2) return sentenceList;
+//                    if (sentenceList.size() == 2) return sentenceList;
                     sentence = new Sentence(i++);
                     sentence.add(new Token(root, test));
                 }

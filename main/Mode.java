@@ -91,7 +91,7 @@ public class Mode {
             testsentence = Reader.read_nn(testfile, true);
             evalsentence = Reader.read_nn(evalfile);
             
-            System.out.println(String.format("Train Sents: %d\nTest Sents: %d", trainsentence.size(), testsentence.size()));
+                System.out.println(String.format("Train Sents: %d\nTest Sents: %d", trainsentence.size(), testsentence.size()));
             
             ArrayList a = RoleDict.roledict;
             
@@ -186,8 +186,8 @@ public class Mode {
     final private void argumentClassification() throws IOException {
         System.out.println("\nArgument Classifier Learning START");
         weight_length = 50;
-        LookupTable.weight_length = 50;
-        PathLookupTable.weight_length = 50;
+        LookupTable.weight_length = weight_length;
+        PathLookupTable.weight_length = weight_length;
         final Trainer trainer = new Trainer(trainsentence, parserselect, weight_length, restart, prune);
 
         iteration = 200;

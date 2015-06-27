@@ -7,6 +7,7 @@ package learning;
 
 import Jama.Matrix;
 import io.Sentence;
+import static java.lang.Math.exp;
 import semanticrolelabeler.Graph;
 
 /**
@@ -31,7 +32,11 @@ public class Classifier {
     public void updateWeights(final int o_label, final int p_label, final int[] feature, final boolean second){}
 
     public double forward(final Matrix x) {
-        return 0.0d;
+        return 0;
+    }
+
+    public double[] forward(final Matrix x, final Matrix a0, final Matrix a1) {
+        return null;
     }
     
     public void backpropagation(final int o_tag, final Matrix x) {}
@@ -39,28 +44,42 @@ public class Classifier {
 //    public void backpropagation(final int o_tag, final double prob, final Matrix h, final Matrix x) {}
 
     public void backpropagation(final double o_tag, final double prob, final Matrix h, final Matrix x) {}
-
+    
+    public Matrix sigmoid(final Matrix x) {
+        for (int j=0; j<x.getRowDimension(); ++j) {
+            for (int i=0; i<x.getColumnDimension(); ++i) {            
+                double score = 1.0 / (1.0 + exp(-(x.get(j, i))));
+                x.set(j, i, score);
+            }
+        }   
+        return x;
+    }
+        
     public Matrix delta_y (final double o_tag, final double prob) {
-        return new Matrix(1,1);
+        return null;
     }
     
     public Matrix derivative_kj(final Matrix delta_y, final Matrix h) {
-        return new Matrix(1,1);
+        return null;
     }
 
     public Matrix derivative_ji(final Matrix delta_y, final Matrix h, final Matrix x) {
-        return new Matrix(1,1);
+        return null;
     }
     
     public Matrix derivative_x (final Matrix delta_y, final Matrix h) {
-        return new Matrix(1,1);
+        return null;
     }
     
     public void update(final Matrix derivative_kj, final Matrix derivative_ji) {}
 
-    public void update(final Sentence sentence, final int[] graph, final int prd_i,
-                        final Matrix h, final Matrix derivative_x, final Matrix x) {}
+    public void updateVector(final Sentence sentence, final int[] graph, final int prd_i,
+                               final Matrix h, final Matrix derivative_x, final Matrix x) {}
 
     public void update(final Sentence sentence, final int prd_i, final double delta, final Graph graph) {}
     
+    public void update(final Sentence sentence, final int prd_i, final double[] delta, final Graph graph) {}
+
+    public void update(final Sentence sentence, final int prd_i, final Graph o_graph, final Graph graph) {}
+
 }

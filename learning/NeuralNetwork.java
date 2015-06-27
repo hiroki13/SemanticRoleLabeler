@@ -21,19 +21,17 @@ import semanticrolelabeler.Graph;
  * @author hiroki
  */
 public class NeuralNetwork extends Classifier{
-    final Matrix w_ji;
-    final Matrix w_kj;
+    final Matrix w_ji, w_kj;
     final Random rnd = new Random(0);
     final double alpha = 0.075d;
     final int weight_length;
     
     public NeuralNetwork(final int weight_length) {
         this.weight_length = weight_length;
-//        w_ji = initialize(weight_length*3, weight_length*(2*RoleDict.size()+1));
-        w_ji = initialize(1, weight_length*(2*RoleDict.size()+1));
+        w_ji = initialize(weight_length*3, weight_length*(2*RoleDict.size()+1));
         w_kj = initialize(1, weight_length*3);
     }
-/*    
+    
     @Override
     public double forward(final Matrix x) {
         final Matrix in_j = w_ji.times(x);
@@ -44,13 +42,7 @@ public class NeuralNetwork extends Classifier{
         double y = Math.tanh(in_k.get(0, 0));
         return y;
     }
-*/    
-    @Override
-    public double forward(final Matrix x) {
-        final Matrix d = sigmoid(w_ji.times(x));
-        return d.get(0, 0);
-    }
-    
+
     @Override
     public void backpropagation(final double o_tag, final double prob, final Matrix h, final Matrix x) {
         final Matrix delta_y = delta_y(o_tag, prob);
@@ -58,14 +50,7 @@ public class NeuralNetwork extends Classifier{
         final Matrix derivative_ji = derivative_ji(delta_y, h, x);
         update(derivative_kj, derivative_ji);
     }
-/*    
-    @Override
-    public Matrix delta_y (final double o_tag, final double prob) {
-        final Matrix error = new Matrix(1, 1);
-        error.set(0, 0, prob-o_tag);
-        return error;
-    }
-*/
+    
     @Override
     public Matrix delta_y (final double o_tag, final double prob) {
         final Matrix error = new Matrix(1, 1);
@@ -111,76 +96,57 @@ public class NeuralNetwork extends Classifier{
         return derivative_x;
     }
     
-/*    
+    
     @Override
     public void update(final Matrix derivative_kj, final Matrix derivative_ji) {
         w_kj.minusEquals(derivative_kj.timesEquals(alpha));
         w_ji.minusEquals(derivative_ji.timesEquals(alpha));
     }
-*/
     
-    @Override
-    public void update(final Sentence sentence, final int prd_i, final double delta, final Graph graph) {
-        final Matrix derivative_ji = graph.feature.times(delta).transpose();
-        derivative_ji.timesEquals(alpha);
-
-        final double[] derivative_x = derivative_x(delta).getRowPackedCopy();
-        w_ji.minusEquals(derivative_ji);
-//        updateVector(sentence, prd_i, graph, derivative_x);
-    }
-
-    public Matrix derivative_x(final double delta) {
-        final Matrix derivative_x = w_ji.times(delta);
-        derivative_x.timesEquals(alpha);
-        return derivative_x;
-    }
-        
     public void updateVector(final Sentence sentence, final int prd_i, final Graph graph, final double[] derivative_x) {
         final Token prd = sentence.tokens.get(sentence.preds[prd_i]);
         final double[] phi_vec = graph.feature.getRowPackedCopy();
         
         final double[] vec_prd = updatedVector(phi_vec, 0, derivative_x);
-        double[] v = LookupTable.token_dict.get(prd.form);
         LookupTable.token_dict.put(prd.form, vec_prd);
-        double[] u = LookupTable.token_dict.get(prd.form);
                 
         for (int role=0; role<graph.graph.length; ++role) {
             int arg_i = graph.graph[role];
             
             final int begin1 = weight_length*(2*role+1);
-            final double[] vec_arg = updatedVector(phi_vec, begin1, derivative_x);
-            
+            final double[] vec_arg = updatedVector(phi_vec, begin1, derivative_x);            
             final int begin2 = weight_length*(2*role+2);
             final double[] vec_path = updatedVector(phi_vec, begin2, derivative_x);
             
             if (arg_i > -1) {
-                Token arg = sentence.tokens.get(arg_i+1);
-                if (role == 0) LookupTable.token_dict_a0.replace(arg.form, vec_arg);
-                else LookupTable.token_dict_a1.replace(arg.form, vec_arg);
-                PathLookupTable.path_dict.replace(sentence.dep_path[prd_i][arg_i]+"_"+role, vec_path);
+                final int arg_id = prd.arguments.get(arg_i);
+                Token arg = sentence.tokens.get(arg_id);
+                if (role == 0) LookupTable.token_dict_a0.put(arg.form, vec_arg);
+                else LookupTable.token_dict_a1.put(arg.form, vec_arg);
+                PathLookupTable.path_dict.put(sentence.dep_path[prd_i][arg_id] + "_" + role, vec_path);
             }
             else {
-                LookupTable.token_dict.replace("*UNKNOWN*" + role, vec_arg);
-                PathLookupTable.path_dict.replace("NULL_" + role, vec_path);
+                LookupTable.token_dict.put("*UNKNOWN*" + role, vec_arg);
+                PathLookupTable.path_dict.put("NULL_" + role, vec_path);
             }            
         }
     }
-    
-    final private double[] vec_minusEquals(final double[] vec, final double[] x, final int begin) {
-        for (int i=begin; i<begin+weight_length; ++i) vec[i-begin] -= x[i];
-        return vec;
+
+    final private boolean match(final double[] graph1, final double[] graph2) {
+        for (int i=0; i<graph1.length; ++i) if (graph1[i] != graph2[i]) return false;
+        return true;
     }
     
     final private double[] updatedVector(final double[] phi_vec, final int begin, final double[] derivative) {
         double[] vec = new double[weight_length];
-        System.arraycopy(phi_vec, begin, vec, 0, weight_length);        
-        vec = vec_minusEquals(vec, derivative, begin);
+        System.arraycopy(phi_vec, begin, vec, 0, weight_length);
+        for (int i=begin; i<begin+weight_length; ++i) vec[i-begin] -= derivative[i];
         return vec;
     }
     
     @Override
-    public void update(final Sentence sentence, final int[] graph, final int prd_i,
-                        final Matrix h, final Matrix derivative_x, final Matrix x) {
+    public void updateVector(final Sentence sentence, final int[] graph, final int prd_i,
+                               final Matrix h, final Matrix derivative_x, final Matrix x) {
         final ArrayList<Token> tokens = sentence.tokens;
         final Token prd = tokens.get(sentence.preds[prd_i]);
 
@@ -246,35 +212,6 @@ public class NeuralNetwork extends Classifier{
         return x;
     }
     
-    public Matrix sigmoid(final Matrix x) {
-        for (int j=0; j<x.getRowDimension(); ++j) {
-            for (int i=0; i<x.getColumnDimension(); ++i) {            
-                double score = 1.0 / (1.0 + exp(-(x.get(j, i))));
-                x.set(j, i, score);
-            }
-        }   
-        return x;
-    }
-
-/*    
-    public Matrix sigmoid(final Matrix x) {
-        for (int j=0; j<x.getRowDimension(); ++j) {
-            for (int i=0; i<x.getColumnDimension(); ++i) {            
-                double score = 1.0 / (1.0 + exp(-(x.get(j, i))));
-                if (Double.isInfinite(score)) {
-                    System.out.println("Inf:" + x.get(j, i));
-                    System.exit(0);
-                }
-                else if (Double.isNaN(score)) {
-                    System.out.println("NaN:" + x.get(j, i));
-                    System.exit(0);
-                }
-                x.set(j, i, score);
-            }
-        }   
-        return x;
-    }
-*/    
     public Matrix relu(final Matrix x) {
         for (int j=0; j<x.getRowDimension(); ++j) {
             for (int i=0; i<x.getColumnDimension(); ++i) {            
@@ -299,14 +236,6 @@ public class NeuralNetwork extends Classifier{
         for (int i=0; i<x.getRowDimension(); ++i) z += x.get(i, 0); 
         return z;
     }
-    
-    final public Matrix initialize(final Matrix x) {
-        for (int i=0; i<x.getRowDimension(); ++i) {
-            for (int j=0; j<x.getColumnDimension(); ++j)
-                x.set(i, j, x.get(i, j)-0.5);
-        }
-        return x;
-    }        
     
     final public Matrix initialize(final int d1, final int d2) {
         final double[][] matrix = new double[d1][d2];
