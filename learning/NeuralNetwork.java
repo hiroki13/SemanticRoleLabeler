@@ -23,7 +23,6 @@ import semanticrolelabeler.Graph;
 public class NeuralNetwork extends Classifier{
     final Matrix w_ji, w_kj;
     final Random rnd = new Random(0);
-    final double alpha = 0.075d;
     final int weight_length;
     
     public NeuralNetwork(final int weight_length) {
@@ -32,14 +31,21 @@ public class NeuralNetwork extends Classifier{
         w_kj = initialize(1, weight_length*3);
     }
     
+    public NeuralNetwork(final int weight_length, final int h_layer) {
+        this.weight_length = weight_length;
+        w_ji = initialize(weight_length*h_layer, weight_length*(2*RoleDict.size()+1));
+        w_kj = initialize(1, weight_length*h_layer);
+    }
+    
     @Override
     public double forward(final Matrix x) {
         final Matrix in_j = w_ji.times(x);
         h = relu(in_j);
+//        h = sigmoid(in_j);
         final Matrix in_k = w_kj.times(h);//1 * 1
 //        double y = sigmoid(in_k).get(0, 0);
-//        double y = in_k.get(0, 0);
-        double y = Math.tanh(in_k.get(0, 0));
+        double y = in_k.get(0, 0);
+//        double y = Math.tanh(in_k.get(0, 0));
         return y;
     }
 
@@ -55,7 +61,8 @@ public class NeuralNetwork extends Classifier{
     public Matrix delta_y (final double o_tag, final double prob) {
         final Matrix error = new Matrix(1, 1);
 //        error.set(0, 0, o_tag * prob * (1-prob));
-        error.set(0, 0, o_tag * (1 - prob*prob));
+//        error.set(0, 0, o_tag * (1 - prob*prob));
+        error.set(0, 0, o_tag);
         return error;
     }
 
@@ -64,13 +71,13 @@ public class NeuralNetwork extends Classifier{
         // error = 1*1, h = j*1,
         return delta_y.times(h.transpose());
     }
+
     
     @Override
     public Matrix derivative_ji(final Matrix delta_y, final Matrix h, final Matrix x) {
-        // w_ij = j * i
         final Matrix derivative = new Matrix(w_ji.getRowDimension(), w_ji.getColumnDimension());
-        // w_jk = 45 * dim of j, error = 45 * 1, error_j = dim of j * 1
         final Matrix error_j = w_kj.transpose().times(delta_y);
+        
         for (int j=0; j<error_j.getRowDimension(); ++j) {
             double h_derivative = 0.0d;
             if (h.get(j, 0) > 0) h_derivative = 1.0d;
@@ -80,9 +87,30 @@ public class NeuralNetwork extends Classifier{
             for (int i=0; i<x.getRowDimension(); ++i)
                 derivative.set(j, i, delta_h * x.get(i, 0));
         }
+        
         return derivative;
     }
 
+/*    
+    @Override
+    public Matrix derivative_ji(final Matrix delta_y, final Matrix h, final Matrix x) {
+        final Matrix derivative = new Matrix(w_ji.getRowDimension(), w_ji.getColumnDimension());
+        final Matrix error_j = w_kj.transpose().times(delta_y);
+        
+        for (int j=0; j<error_j.getRowDimension(); ++j) {
+            double h_j = h.get(j, 0);
+            double h_derivative = h_j * (1-h_j);
+            
+            final double delta_h = error_j.get(j, 0) * h_derivative;
+
+            for (int i=0; i<x.getRowDimension(); ++i)
+                derivative.set(j, i, delta_h * x.get(i, 0));
+        }
+        
+        return derivative;
+    }
+*/
+    
     @Override
     public Matrix derivative_x (final Matrix delta_y, final Matrix h) {
         final Matrix delta_h = w_kj.times(delta_y.get(0, 0));//1 * 200

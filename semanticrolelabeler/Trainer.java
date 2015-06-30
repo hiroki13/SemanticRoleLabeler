@@ -50,6 +50,25 @@ final public class Trainer {
         }
     }
 
+    public Trainer(final ArrayList<Sentence> sentencelist, final String p_name,
+                    final int weight_length, final int restart, final int prune, final int h_layer) {
+        this.sentencelist = sentencelist;
+        this.parser_name = p_name;
+
+        if ("hill".equals(p_name)) {
+            Classifier c = new MultiClassPerceptron(RoleDict.biroledict.size(), weight_length);
+            parser = new HillClimbParser(c, weight_length, restart, prune);
+        }
+        else if ("nn".equals(p_name)) {
+            Classifier c = new NeuralNetwork(weight_length, h_layer);
+            parser = new NeuralParser(c, weight_length, restart, prune);
+        }
+        else {
+            Classifier c = new MultiClassPerceptron(RoleDict.roledict.size(), weight_length);
+            parser = new BaseParser(c, weight_length, prune);
+        }
+    }
+
     final public void train(){
         if ("hill".equals(parser_name)) parser.trainSecond(sentencelist);
         else if ("nn".equals(parser_name)) parser.train(sentencelist);

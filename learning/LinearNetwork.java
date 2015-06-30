@@ -11,8 +11,6 @@ import io.PathLookupTable;
 import io.RoleDict;
 import io.Sentence;
 import io.Token;
-import static java.lang.Math.exp;
-import java.util.ArrayList;
 import java.util.Random;
 import semanticrolelabeler.Graph;
 
@@ -25,7 +23,6 @@ public class LinearNetwork extends Classifier{
     final Matrix w_ji;
     Matrix w_a0, w_a1;
     final Random rnd = new Random(0);
-    final double alpha = 0.075d;
     final int weight_length;
     
     public LinearNetwork(final int weight_length) {

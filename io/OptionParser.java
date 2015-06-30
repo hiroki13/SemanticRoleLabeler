@@ -33,4 +33,10 @@ public class OptionParser {
         return defaultvalue;
     }
             
+    final public double getDouble(String key, double defaultvalue){
+        for(int i=0;i<args.length;i++)
+            if(("-"+key).equals(args[i])) return Double.valueOf(args[i+1]);
+        return defaultvalue;
+    }
+            
 }

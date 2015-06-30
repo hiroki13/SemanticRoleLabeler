@@ -11,6 +11,7 @@ import io.RoleDict;
 import io.Sentence;
 import io.Token;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Random;
 import learning.Classifier;
 
@@ -28,7 +29,7 @@ public class NeuralParser extends Parser{
         this.classifier = c;
         this.weight_length = weight_length;
         this.feature_extracter = new FeatureExtractor(weight_length);
-        this.rnd = new Random();
+        this.rnd = new Random(0);
         this.restart = restart;
         this.prune = prune;
         this.proposition = RoleDict.rolearray;
@@ -136,23 +137,19 @@ public class NeuralParser extends Parser{
             final Graph graph = decode(sentence, prd_i);
             checkAccuracy(sentence.o_graph[prd_i], graph.graph);
             
-            final Graph o_g = new Graph();
-            o_g.graph = copyGraph(sentence.o_graph[prd_i]);
-            o_g.feature = new Matrix(lookupFeature(sentence, o_g.graph, prd_i), weight_length*(2*RoleDict.size()+1));
-            o_g.score = classifier.forward(o_g.feature);
-            o_g.h = copyMatrix(classifier.h);
+            final Graph o_g = setOGraph(sentence, prd_i);
 
             if ((1 - o_g.score + graph.score) <= 0) continue;
             
             final Matrix o_delta_y = classifier.delta_y(-1.0, o_g.score);
             final Matrix o_derivative_kj = classifier.derivative_kj(o_delta_y, o_g.h);
             final Matrix o_derivative_ji = classifier.derivative_ji(o_delta_y, o_g.h, o_g.feature);
-            final Matrix o_derivative_x = classifier.derivative_x(o_delta_y, o_g.h);
+//            final Matrix o_derivative_x = classifier.derivative_x(o_delta_y, o_g.h);
 
             final Matrix delta_y = classifier.delta_y(1.0, graph.score);
             final Matrix derivative_kj = classifier.derivative_kj(delta_y, graph.h);
             final Matrix derivative_ji = classifier.derivative_ji(delta_y, graph.h, graph.feature);
-            final Matrix derivative_x = classifier.derivative_x(delta_y, graph.h);
+//            final Matrix derivative_x = classifier.derivative_x(delta_y, graph.h);
             
             classifier.update(derivative_kj, derivative_ji);
             classifier.update(o_derivative_kj, o_derivative_ji);
@@ -224,23 +221,10 @@ public class NeuralParser extends Parser{
         return g;
     }
 
-/*    
-    final private void update(final Sentence sentence, final int prd_i, final Graph o_g, final Graph g) {
-        final double delta = delta_sigmoid(o_g, g);
-//        final double delta = delta_ranking(o_g, g);
-//        classifier.update(delta, g.feature);
-        classifier.update(sentence, prd_i, delta, g);
-    }
-*/    
     final private void update(final Sentence sentence, final int prd_i, final Graph o_g, final Graph g) {
         classifier.update(sentence, prd_i, o_g, g);        
     }
     
-    final private double delta_sigmoid(final Graph o_g, final Graph g) {
-        if (match(o_g.graph, g.graph)) return g.score - 1.0d;        
-        return g.score;                
-    }
-
     @Override
     final public void test(final ArrayList<Sentence> testsentencelist) {
         time = (long) 0.0;
@@ -372,8 +356,8 @@ public class NeuralParser extends Parser{
         g.score = -1000000000.0d;
         
         for (int arg_i=-1; arg_i<arg_length; ++arg_i) {            
-        for (int arg_j=-1; arg_j<arg_length; ++arg_j) {            
-                final int[] tmp_graph = new int[]{arg_i, arg_j};
+            for (int arg_j=-1; arg_j<arg_length; ++arg_j) {                                
+                final int[] tmp_graph = new int[]{arg_i, arg_j};                
                 final Matrix feature = new Matrix(lookupFeature(sentence, tmp_graph, prd_i), weight_length*(2*RoleDict.size()+1));                
 //                final Matrix feature = new Matrix(lookupFeature(sentence, tmp_graph, prd_i), weight_length*(RoleDict.size()+1));                
                 final double score = classifier.forward(feature);
@@ -383,7 +367,7 @@ public class NeuralParser extends Parser{
                     g.feature = feature.copy();                                            
                     g.h = classifier.h.copy();                                            
                     g.graph = copyGraph(tmp_graph);                    
-                }                                    
+                }                                            
             }
         }
         return g;

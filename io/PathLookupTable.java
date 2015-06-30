@@ -26,7 +26,7 @@ public class PathLookupTable {
     
     final static public double[] vector() {
         final double[] vector = new double[weight_length];
-        for (int i=0; i<weight_length; ++i) vector[i] = (rnd.nextDouble() - 0.5) / 10;
+        for (int i=0; i<weight_length; ++i) vector[i] = (rnd.nextDouble() - 0.5);
         return vector;
     }
     

@@ -30,8 +30,9 @@ public class Mode {
     public String modeselect, parserselect;    
     public String trainfile, testfile, evalfile, outfile, modelfile, framefile, embedfile;
     public boolean train, test, eval, output, model, frame, embeddings, check_accuracy, pd, ai, ac, core;
-    public int iteration, restart, weight_length, prune;
+    public int iteration, restart, weight_length, h_layer, prune;
     public ArrayList<Sentence> trainsentence, testsentence, evalsentence;
+    public double alpha;
     
     
     Mode(String[] args) throws Exception{
@@ -70,6 +71,8 @@ public class Mode {
         iteration = optionparser.getInt("iter", 10);
         restart = optionparser.getInt("restart", 1);
         prune = optionparser.getInt("prune", 100000);
+        alpha = optionparser.getDouble("alpha", 0.075);
+        h_layer = optionparser.getInt("h_layer", 3);
     }    
     
     final public void execute() throws Exception{
@@ -90,13 +93,15 @@ public class Mode {
             trainsentence = Reader.read_nn(trainfile, false);
             testsentence = Reader.read_nn(testfile, true);
             evalsentence = Reader.read_nn(evalfile);
-            
-                System.out.println(String.format("Train Sents: %d\nTest Sents: %d", trainsentence.size(), testsentence.size()));
+                            
+            System.out.println(String.format("Train Sents: %d\nTest Sents: %d", trainsentence.size(), testsentence.size()));
             
             ArrayList a = RoleDict.roledict;
             
             System.out.println("Framedict: " + FrameDict.framedict.size());
             System.out.println("Roles: " + RoleDict.roledict.size());
+            System.out.println("Alpha: " + alpha);
+            System.out.println("Hidden Layer: " + h_layer);
             
             predicateDisambiguation();            
             argumentClassification();
@@ -188,16 +193,18 @@ public class Mode {
         weight_length = 50;
         LookupTable.weight_length = weight_length;
         PathLookupTable.weight_length = weight_length;
-        final Trainer trainer = new Trainer(trainsentence, parserselect, weight_length, restart, prune);
+//        final Trainer trainer = new Trainer(trainsentence, parserselect, weight_length, restart, prune);
+        final Trainer trainer = new Trainer(trainsentence, parserselect, weight_length, restart, prune, h_layer);
 
         iteration = 200;
+        trainer.parser.classifier.alpha = alpha;
         for (int i=0; i<iteration; ++i) {        
             System.out.println("\nIteration: " + (i+1));            
             trainer.train();            
             System.out.println();            
 
-//            AccuracyChecker checker = new AccuracyChecker();
-//            checker.test(testsentence, evalsentence, trainer.parser, parserselect);
+            AccuracyChecker checker = new AccuracyChecker();
+            checker.test(testsentence, evalsentence, trainer.parser, parserselect);
         }        
     }
     
