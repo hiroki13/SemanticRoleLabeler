@@ -28,7 +28,8 @@ public class Token {
     public int pred;
     public int[] apred;
     final public String cpos;
-//    final public double[] vec;
+    final public double[] vec;
+    final public double[] pos_vec;
     
     final public ArrayList<Integer> children;
     public String leftmostw;
@@ -65,7 +66,8 @@ public class Token {
         fillpred = line[12];
         pred = getSenseID(cpos, line[13]);
         apred = setApred(line, test);
-//        vec = LookupTable.get(form);
+        vec = LookupTable.get(form);
+        pos_vec = LookupTable.getPos(ppos);
         
         children = new ArrayList<>();
         leftmostw = "";

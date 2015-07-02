@@ -70,10 +70,18 @@ public class Classifier {
         return null;
     }
     
+    public Matrix derivative_b (final Matrix delta_y, final Matrix h) {
+        return null;
+    }
+    
     public void update(final Matrix derivative_kj, final Matrix derivative_ji) {}
 
+    public void update_b(final Matrix derivative_b) {}
+    
     public void updateVector(final Sentence sentence, final int[] graph, final int prd_i,
                                final Matrix h, final Matrix derivative_x, final Matrix x) {}
+    
+    public void updateVector(final Sentence sentence, final int prd_i, final Graph graph, final double[] derivative_x) {}    
 
     public void update(final Sentence sentence, final int prd_i, final double delta, final Graph graph) {}
     

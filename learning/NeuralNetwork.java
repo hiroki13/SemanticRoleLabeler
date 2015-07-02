@@ -21,7 +21,7 @@ import semanticrolelabeler.Graph;
  * @author hiroki
  */
 public class NeuralNetwork extends Classifier{
-    final Matrix w_ji, w_kj;
+    final Matrix w_ji, w_kj, b_j;
     final Random rnd = new Random(0);
     final int weight_length;
     
@@ -29,17 +29,34 @@ public class NeuralNetwork extends Classifier{
         this.weight_length = weight_length;
         w_ji = initialize(weight_length*3, weight_length*(2*RoleDict.size()+1));
         w_kj = initialize(1, weight_length*3);
+        b_j = initialize(weight_length*3, 1);
     }
     
     public NeuralNetwork(final int weight_length, final int h_layer) {
         this.weight_length = weight_length;
-        w_ji = initialize(weight_length*h_layer, weight_length*(2*RoleDict.size()+1));
+//        w_ji = initialize(weight_length*h_layer, weight_length*(2*RoleDict.size()+1));
+        w_ji = initialize(weight_length*h_layer, weight_length*(4*RoleDict.size()+4));
+//        w_ji = initialize(weight_length*h_layer, weight_length*(RoleDict.size()+1));
         w_kj = initialize(1, weight_length*h_layer);
+        b_j = initialize_b(weight_length*h_layer, 1);
     }
-    
+/*    
     @Override
     public double forward(final Matrix x) {
         final Matrix in_j = w_ji.times(x);
+        h = relu(in_j);
+//        h = sigmoid(in_j);
+        final Matrix in_k = w_kj.times(h);//1 * 1
+//        double y = sigmoid(in_k).get(0, 0);
+        double y = in_k.get(0, 0);
+//        double y = Math.tanh(in_k.get(0, 0));
+        return y;
+    }
+*/
+    @Override
+    public double forward(final Matrix x) {
+        final Matrix in_j = w_ji.times(x);
+        in_j.plusEquals(b_j);
         h = relu(in_j);
 //        h = sigmoid(in_j);
         final Matrix in_k = w_kj.times(h);//1 * 1
@@ -124,6 +141,16 @@ public class NeuralNetwork extends Classifier{
         return derivative_x;
     }
     
+    @Override
+    public Matrix derivative_b (final Matrix delta_y, final Matrix h) {
+        final Matrix delta_h = w_kj.times(delta_y.get(0, 0));//1 * 200
+
+        for (int j=0; j<delta_h.getColumnDimension(); ++j) {
+            if (h.get(j, 0) <= 0) delta_h.set(0, j, 0.0d);            
+        }
+        return delta_h;
+    }
+    
     
     @Override
     public void update(final Matrix derivative_kj, final Matrix derivative_ji) {
@@ -131,6 +158,12 @@ public class NeuralNetwork extends Classifier{
         w_ji.minusEquals(derivative_ji.timesEquals(alpha));
     }
     
+    @Override
+    public void update_b(final Matrix derivative_b) {
+        b_j.minusEquals(derivative_b.timesEquals(alpha).transpose());
+    }
+    
+    @Override
     public void updateVector(final Sentence sentence, final int prd_i, final Graph graph, final double[] derivative_x) {
         final Token prd = sentence.tokens.get(sentence.preds[prd_i]);
         final double[] phi_vec = graph.feature.getRowPackedCopy();
@@ -149,8 +182,11 @@ public class NeuralNetwork extends Classifier{
             if (arg_i > -1) {
                 final int arg_id = prd.arguments.get(arg_i);
                 Token arg = sentence.tokens.get(arg_id);
+                
                 if (role == 0) LookupTable.token_dict_a0.put(arg.form, vec_arg);
                 else LookupTable.token_dict_a1.put(arg.form, vec_arg);
+//                LookupTable.token_dict.put(arg.form, vec_arg);
+                
                 PathLookupTable.path_dict.put(sentence.dep_path[prd_i][arg_id] + "_" + role, vec_path);
             }
             else {
@@ -273,5 +309,16 @@ public class NeuralNetwork extends Classifier{
                 matrix[i][j] = (rnd.nextDouble() - 0.5) / 10;
         }
         return new Matrix(matrix);
+    }
+    
+    final public Matrix initialize_b(final int d1, final int d2) {
+        final double[][] matrix = new double[d1][d2];
+        for (int i=0; i<d1; ++i) {
+            for (int j=0; j<d2; ++j)
+//                matrix[i][j] = rnd.nextDouble() - 0.5;
+                matrix[i][j] = 0.1;
+        }
+        return new Matrix(matrix);
     }        
+    
 }

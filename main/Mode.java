@@ -203,8 +203,8 @@ public class Mode {
             trainer.train();            
             System.out.println();            
 
-            AccuracyChecker checker = new AccuracyChecker();
-            checker.test(testsentence, evalsentence, trainer.parser, parserselect);
+//            AccuracyChecker checker = new AccuracyChecker();
+//            checker.test(testsentence, evalsentence, trainer.parser, parserselect);
         }        
     }
     

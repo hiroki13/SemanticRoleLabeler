@@ -234,10 +234,10 @@ public class Reader {
                     embedding[i-1] = Double.valueOf(split[i]);
                 
                 LookupTable.token_dict.put(w, embedding);
-                for (int i=0; i<2; ++i) {
-                    if (i == 0) LookupTable.token_dict_a0.put(w, embedding);
-                    else LookupTable.token_dict_a1.put(w, embedding);
-                }
+//                for (int i=0; i<2; ++i) {
+//                    if (i == 0) LookupTable.token_dict_a0.put(w, embedding);
+//                    else LookupTable.token_dict_a1.put(w, embedding);
+//                }
             }
         }
     }
